@@ -165,5 +165,18 @@ def test_settings_fields_match_spec():
         "pass_threshold",
         "parent_pin",
         "secret_key",
+        "llm_timeout",
     )
     assert tuple(Settings.__dataclass_fields__) == expected
+
+
+def test_llm_timeout_defaults_and_reads_env():
+    assert load_settings({}).llm_timeout == 120.0
+    assert load_settings({"READBACK_LLM_TIMEOUT": "300"}).llm_timeout == 300.0
+
+
+def test_llm_timeout_rejects_bad_values():
+    with pytest.raises(ValueError):
+        load_settings({"READBACK_LLM_TIMEOUT": "soon"})
+    with pytest.raises(ValueError):
+        load_settings({"READBACK_LLM_TIMEOUT": "0"})

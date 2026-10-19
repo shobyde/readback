@@ -3,9 +3,17 @@
 {% block content %}
 <p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / Review</p>
 
-<h1>Review: {{ book.title if book else "Book " ~ quiz.book_id }}</h1>
-{% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
-<p class="meta">Status: <strong>{{ quiz.status }}</strong> · {{ quiz.questions|length }} questions · model {{ quiz.model or "unknown" }}</p>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">Approval queue</p>
+    <h1>Review: {{ book.title if book else "Book " ~ quiz.book_id }}</h1>
+    {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
+  </div>
+  <p class="meta">
+    <span class="badge badge-draft">{{ quiz.status|capitalize }}</span>
+    {{ quiz.questions|length }} questions{% if quiz.model %} · AI draft{% endif %}
+  </p>
+</div>
 
 {% if problems %}
   <div class="problems">
@@ -18,29 +26,44 @@
   </div>
 {% endif %}
 
+<div class="question-nav" aria-label="Jump to a question">
+  {% for question in quiz.questions %}
+    <a href="#q-{{ loop.index }}">{{ loop.index }}</a>
+  {% endfor %}
+</div>
+
 {% for question in quiz.questions %}
-  <section class="review-question">
-    <h2>Question {{ question.ordinal }}</h2>
+  <section class="review-question" id="q-{{ loop.index }}">
+    <div class="qhead">
+      <h2><span class="qchip">{{ loop.index }}</span> Question {{ question.ordinal }}</h2>
+    </div>
     <form method="post" action="{{ url_for('parent_question_edit', question_id=question.id) }}" class="edit-form">
       <label for="prompt-{{ question.id }}">Prompt</label>
       <textarea id="prompt-{{ question.id }}" name="prompt" rows="2" required>{{ question.prompt }}</textarea>
 
-      {% for index in choice_indexes %}
-        <label for="choice-{{ question.id }}-{{ index }}">Choice {{ index }}</label>
-        <input id="choice-{{ question.id }}-{{ index }}" type="text" name="choice_{{ index }}" value="{{ question.choices[index] if index < question.choices|length else '' }}" required>
-      {% endfor %}
+      <div class="choice-grid">
+        {% for index in choice_indexes %}
+          <div>
+            <label for="choice-{{ question.id }}-{{ index }}">Choice {{ index + 1 }}</label>
+            <input id="choice-{{ question.id }}-{{ index }}" type="text" name="choice_{{ index }}" value="{{ question.choices[index] if index < question.choices|length else '' }}" required>
+          </div>
+        {% endfor %}
+      </div>
 
       <label for="answer-{{ question.id }}">Correct choice</label>
       <select id="answer-{{ question.id }}" name="answer_index">
         {% for index in choice_indexes %}
-          <option value="{{ index }}"{% if index == question.answer_index %} selected{% endif %}>{{ index }}</option>
+          <option value="{{ index }}"{% if index == question.answer_index %} selected{% endif %}>{{ index + 1 }}. {{ question.choices[index] if index < question.choices|length else "" }}</option>
         {% endfor %}
       </select>
+      {% if question.answer_index < question.choices|length %}
+        <p class="answer-preview">Readers will see: <strong>{{ question.choices[question.answer_index] }}</strong></p>
+      {% endif %}
 
       <label for="explanation-{{ question.id }}">Explanation</label>
       <textarea id="explanation-{{ question.id }}" name="explanation" rows="2">{{ question.explanation }}</textarea>
 
-      <p class="actions"><button type="submit">Save question</button></p>
+      <p class="actions"><button type="submit" class="secondary">Save question</button></p>
     </form>
 
     <form method="post" action="{{ url_for('parent_question_delete', question_id=question.id) }}" class="delete-form">
@@ -51,19 +74,21 @@
   <p class="empty">This quiz has no questions.</p>
 {% endfor %}
 
-<h2>Approve or reject</h2>
-<div class="decision-grid">
-  <form method="post" action="{{ url_for('parent_quiz_approve', quiz_id=quiz.id) }}">
-    <p>Approving makes this quiz available to every reader.</p>
-    <button type="submit">Approve quiz</button>
-  </form>
+<section class="decision-card">
+  <h2>Approve or reject</h2>
+  <div class="decision-grid">
+    <form method="post" action="{{ url_for('parent_quiz_approve', quiz_id=quiz.id) }}">
+      <p>Approving makes this quiz available to every reader.</p>
+      <button type="submit">Approve quiz</button>
+    </form>
 
-  <form method="post" action="{{ url_for('parent_quiz_reject', quiz_id=quiz.id) }}">
-    <label for="reject-note">Note (optional)</label>
-    <input id="reject-note" type="text" name="note">
-    <button type="submit" class="danger">Reject quiz</button>
-  </form>
-</div>
+    <form method="post" action="{{ url_for('parent_quiz_reject', quiz_id=quiz.id) }}">
+      <label for="reject-note">Note (optional)</label>
+      <input id="reject-note" type="text" name="note">
+      <button type="submit" class="danger">Reject quiz</button>
+    </form>
+  </div>
+</section>
 
 <p><a href="{{ url_for('parent_index') }}">Back to the parent area</a></p>
 {% endblock %}

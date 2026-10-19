@@ -1,9 +1,14 @@
 # Readback
 
-Readback is a self-hosted reading comprehension tracker for families. It keeps a
-book list, generates short multiple choice quizzes from book metadata, holds
-every generated quiz for parent review, and records reader attempts and points
-in a local SQLite database.
+Self-hosted reading comprehension and points tracking for families.
+
+Readback keeps a book list, generates short multiple-choice quizzes from book
+metadata, holds every generated quiz for parent review, and records reader
+attempts and points in a local SQLite database.
+
+<p align="center">
+  <img src="docs/media/tour.gif" alt="A reader opens a quiz, answers five questions, submits, and sees a passing result" width="860">
+</p>
 
 Readback is not affiliated with Renaissance Learning or Accelerated Reader. It
 generates original questions. It does not contain or copy proprietary quiz
@@ -12,7 +17,7 @@ content, and it never contacts Renaissance Learning services.
 ## What it does
 
 - Stores readers, books, quizzes, attempts, and a points ledger in one SQLite file.
-- Imports a book list from CSV.
+- Imports a book list from CSV and enriches ISBNs through Open Library on demand.
 - Asks an OpenAI-compatible chat endpoint to draft quiz questions for a book.
 - Requires a parent to review, edit, and approve each quiz before readers see it.
 - Scores attempts, awards a book's points once per reader, and exports the
@@ -21,6 +26,16 @@ content, and it never contacts Renaissance Learning services.
 
 Readback does not include a language model. You point it at one you run or
 subscribe to, for example Ollama or LM Studio on the same machine.
+
+## What it looks like
+
+| Readers | Taking a quiz |
+| --- | --- |
+| <img src="docs/media/dashboard.png" alt="Dashboard with reader cards, points, and recent quizzes" width="430"> | <img src="docs/media/quiz.png" alt="A five question quiz with radio choices" width="430"> |
+
+| Result | Parent review |
+| --- | --- |
+| <img src="docs/media/result.png" alt="Passed result with score ring, points, and answer explanations" width="430"> | <img src="docs/media/review.png" alt="Parent review form with editable question, choices, and correct answer" width="430"> |
 
 ## Quick start
 
@@ -38,6 +53,19 @@ Open http://127.0.0.1:5057. The parent area is at `/parent`.
 
 To use a different database file or model endpoint, set the environment
 variables listed below before running `serve`.
+
+### Try it without a model
+
+The repo ships a demo seeder with curated questions, so you can look around
+before wiring up a model endpoint:
+
+```bash
+.venv/bin/python scripts/seed_demo.py --db demo.db --force
+READBACK_DB=demo.db .venv/bin/readback serve
+```
+
+The demo creates four readers, five approved quizzes, one draft waiting for
+review, and nine attempts with points already awarded.
 
 ### Docker
 
@@ -68,6 +96,7 @@ default for a local setup.
 | `READBACK_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible API base URL. |
 | `READBACK_LLM_API_KEY` | empty | Bearer token. Leave empty for local models. |
 | `READBACK_LLM_MODEL` | `llama3.1:8b` | Model name sent to the endpoint. |
+| `READBACK_LLM_TIMEOUT` | `120` | Seconds to wait for a completion. Raise it for large local models on CPU. |
 | `READBACK_PASS_THRESHOLD` | `0.8` | Fraction of correct answers needed to pass, greater than 0 and at most 1. |
 | `READBACK_PARENT_PIN` | empty | When set, `/parent/*` requires this PIN. |
 | `READBACK_SECRET_KEY` | random per process | Flask session signing key. Set it to keep parent sessions across restarts. |
@@ -84,6 +113,9 @@ export READBACK_LLM_BASE_URL=http://localhost:11434/v1
 export READBACK_LLM_API_KEY=
 export READBACK_LLM_MODEL=llama3.1:8b
 ```
+
+Local models on CPU can take a few minutes to produce a quiz. If the request
+times out, raise `READBACK_LLM_TIMEOUT` or use a smaller model.
 
 ### LM Studio
 

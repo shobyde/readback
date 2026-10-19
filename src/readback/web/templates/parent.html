@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Parent area · Readback{% endblock %}
 {% block content %}
+<p class="eyebrow">Grown-ups only</p>
 <h1>Parent area</h1>
+<p class="lede">Readers, draft quizzes waiting on you, books, and the reading log.</p>
 
 <ul class="counts">
   <li><strong>{{ counts['readers'] }}</strong> readers</li>
@@ -26,10 +28,10 @@
       {% for quiz in drafts %}
         {% set book = books.get(quiz.book_id) %}
         <tr>
-          <td>{{ book.title if book else "Book " ~ quiz.book_id }}</td>
+          <td class="wrap">{{ book.title if book else "Book " ~ quiz.book_id }}</td>
           <td>{{ quiz.questions|length }}</td>
-          <td>{{ quiz.created_at }}</td>
-          <td><a href="{{ url_for('parent_quiz', quiz_id=quiz.id) }}">Review</a></td>
+          <td class="meta">{{ quiz.created_at|short_date }}</td>
+          <td><a class="button secondary" href="{{ url_for('parent_quiz', quiz_id=quiz.id) }}">Review</a></td>
         </tr>
       {% endfor %}
     </tbody>
@@ -46,26 +48,21 @@
 </form>
 
 {% if summaries %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Reader</th>
-        <th scope="col">Points</th>
-        <th scope="col">Books passed</th>
-        <th scope="col">Quizzes taken</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for summary in summaries %}
-        <tr>
-          <td><a href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">{{ summary.name }}</a></td>
-          <td>{{ "%.2f"|format(summary.points_total) }}</td>
-          <td>{{ summary.books_passed }}</td>
-          <td>{{ summary.attempts }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="reader-grid">
+    {% for summary in summaries %}
+      <a class="reader-card" href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">
+        <div class="top">
+          <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
+          <h2>{{ summary.name }}</h2>
+          <span class="points">{{ "%.2f"|format(summary.points_total) }} <small>pts</small></span>
+        </div>
+        <p class="sub">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} passed · {{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</p>
+        <div class="meter" role="presentation">
+          <span style="width: {{ ((summary.points_total / max_points) * 100)|round(0) }}%"></span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
 {% else %}
   <p class="empty">No readers yet.</p>
 {% endif %}

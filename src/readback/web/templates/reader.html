@@ -3,36 +3,33 @@
 {% block content %}
 <p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / {{ summary.name }}</p>
 
-<h1>{{ summary.name }}</h1>
-<p class="stat-line">
-  <strong>{{ "%.2f"|format(summary.points_total) }}</strong> points ·
-  {{ summary.books_passed }} books passed ·
-  {{ summary.attempts }} quizzes taken
-</p>
+<section class="reader-hero">
+  <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
+  <div>
+    <h1>{{ summary.name }}</h1>
+    <ul class="chips">
+      <li class="chip"><strong>{{ "%.2f"|format(summary.points_total) }}</strong> points</li>
+      <li class="chip"><strong>{{ summary.books_passed }}</strong> book{{ 's' if summary.books_passed != 1 else '' }} passed</li>
+      <li class="chip"><strong>{{ summary.attempts }}</strong> quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</li>
+    </ul>
+  </div>
+</section>
 
 <h2>Quizzes ready to take</h2>
 {% if quizzes %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Book</th>
-        <th scope="col">Author</th>
-        <th scope="col">Questions</th>
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for quiz in quizzes %}
-        {% set book = books.get(quiz.book_id) %}
-        <tr>
-          <td>{{ book.title if book else "Book " ~ quiz.book_id }}</td>
-          <td>{{ book.author if book else "" }}</td>
-          <td>{{ quiz.questions|length }}</td>
-          <td><a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">Take quiz</a></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="quiz-grid">
+    {% for quiz in quizzes %}
+      {% set book = books.get(quiz.book_id) %}
+      <article class="quiz-card">
+        <h3>{{ book.title if book else "Book " ~ quiz.book_id }}</h3>
+        <p class="byline">{{ book.author if book else "" }}</p>
+        <div class="foot">
+          <span class="meta">{{ quiz.questions|length }} questions</span>
+          <a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">Take quiz</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
 {% else %}
   <p class="empty">No approved quizzes yet. A parent needs to approve a quiz first.</p>
 {% endif %}
@@ -44,17 +41,17 @@
       <tr>
         <th scope="col">Book</th>
         <th scope="col">Author</th>
-        <th scope="col">Points</th>
+        <th scope="col" class="num">Points</th>
         <th scope="col">Earned</th>
       </tr>
     </thead>
     <tbody>
       {% for item in passed %}
         <tr>
-          <td>{{ item.title }}</td>
+          <td class="wrap">{{ item.title }}</td>
           <td>{{ item.author }}</td>
-          <td>{{ "%.2f"|format(item.points) }}</td>
-          <td>{{ item.created_at }}</td>
+          <td class="num">{{ "%.2f"|format(item.points) }}</td>
+          <td class="meta">{{ item.created_at|short_date }}</td>
         </tr>
       {% endfor %}
     </tbody>

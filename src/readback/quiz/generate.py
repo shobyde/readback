@@ -49,7 +49,7 @@ def generate_quiz(
 
     owns_client = client is None
     if client is None:
-        client = httpx.Client(timeout=60.0)
+        client = httpx.Client(timeout=settings.llm_timeout)
 
     try:
         requester = _Requester(client, settings)

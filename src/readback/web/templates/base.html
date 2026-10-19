@@ -7,11 +7,12 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+  {% set in_parent = request.path.startswith('/parent') %}
   <header class="site-header">
     <a class="brand" href="{{ url_for('dashboard') }}">Readback</a>
-    <nav class="site-nav">
-      <a href="{{ url_for('dashboard') }}">Readers</a>
-      <a href="{{ url_for('parent_index') }}">Parent area</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{ url_for('dashboard') }}"{% if not in_parent %} class="active" aria-current="page"{% endif %}>Readers</a>
+      <a href="{{ url_for('parent_index') }}"{% if in_parent %} class="active" aria-current="page"{% endif %}>Parent area</a>
     </nav>
   </header>
 

@@ -3,31 +3,39 @@
 {% block content %}
 <p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / <a href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">{{ attempt['reader_name'] }}</a> / Result</p>
 
-<h1>Quiz result</h1>
-
 {% if attempt['submitted_at'] %}
-  <div class="result-card {{ 'passed' if attempt['passed'] else 'failed' }}">
-    <p class="verdict">{{ "Passed" if attempt['passed'] else "Not passed" }}</p>
-    <p class="score">{{ "%.1f"|format((attempt['score'] or 0) * 100) }}%</p>
-    <p>{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
-  </div>
-
-  <table class="list">
-    <tbody>
-      <tr><th scope="row">Book</th><td>{{ attempt['book_title'] }}{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</td></tr>
-      <tr><th scope="row">Points earned</th><td>{{ "%.2f"|format(points_awarded) }}</td></tr>
-      <tr><th scope="row">Points total</th><td>{{ "%.2f"|format(summary.points_total) }}</td></tr>
-    </tbody>
-  </table>
+  {% set pct = (attempt['score'] or 0) * 100 %}
+  <section class="result-hero {{ 'passed' if attempt['passed'] else 'failed' }}">
+    <div class="score-ring" style="--score: {{ pct|round(1) }}">
+      <div class="score-ring-inner">
+        <strong>{{ "%.1f"|format(pct) }}%</strong>
+        <span>score</span>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow">{{ "Nice work" if attempt['passed'] else "Keep going" }}, {{ attempt['reader_name'] }}</p>
+      <h1>{{ "Passed" if attempt['passed'] else "Not passed" }}</h1>
+      <p class="book"><strong>{{ attempt['book_title'] }}</strong>{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</p>
+      <p>{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
+      <ul class="chips">
+        <li class="chip"><strong>Points earned</strong> +{{ "%.2f"|format(points_awarded) }}</li>
+        <li class="chip"><strong>Points total</strong> {{ "%.2f"|format(summary.points_total) }}</li>
+      </ul>
+      <div class="result-actions">
+        <a class="button" href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to {{ attempt['reader_name'] }}'s shelf</a>
+        <a class="button secondary" href="{{ url_for('dashboard') }}">All readers</a>
+      </div>
+    </div>
+  </section>
 
   <h2>Questions</h2>
   {% for question in questions %}
     <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
-      <h3>Question {{ loop.index }}</h3>
+      <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Review</span>{% endif %}</h3>
       <p class="prompt">{{ question.prompt }}</p>
-      <p>Your answer: {{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
+      <p class="answer-line"><strong>Your answer</strong><br>{{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
       {% if not question.is_correct %}
-        <p>Correct answer: {{ question.correct_text }}</p>
+        <p class="answer-line"><strong>Correct answer</strong><br>{{ question.correct_text }}</p>
       {% endif %}
       {% if question.explanation %}<p class="explanation">{{ question.explanation }}</p>{% endif %}
     </section>
@@ -35,6 +43,4 @@
 {% else %}
   <p class="empty">This quiz attempt was not submitted.</p>
 {% endif %}
-
-<p><a href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to {{ attempt['reader_name'] }}'s page</a></p>
 {% endblock %}

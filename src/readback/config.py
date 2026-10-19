@@ -19,6 +19,7 @@ DEFAULT_PORT = 5057
 DEFAULT_LLM_BASE_URL = "http://localhost:11434/v1"
 DEFAULT_LLM_API_KEY = ""
 DEFAULT_LLM_MODEL = "llama3.1:8b"
+DEFAULT_LLM_TIMEOUT = 120.0
 DEFAULT_PASS_THRESHOLD = 0.8
 DEFAULT_PARENT_PIN = ""
 
@@ -36,6 +37,7 @@ class Settings:
     pass_threshold: float
     parent_pin: str
     secret_key: str
+    llm_timeout: float = DEFAULT_LLM_TIMEOUT
 
 
 def _text(source: Mapping[str, str], name: str, default: str) -> str:
@@ -81,6 +83,20 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
 
     secret_key = _text(source, "READBACK_SECRET_KEY", "") or secrets.token_hex(32)
 
+    timeout_text = _text(
+        source, "READBACK_LLM_TIMEOUT", str(DEFAULT_LLM_TIMEOUT)
+    )
+    try:
+        llm_timeout = float(timeout_text)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"READBACK_LLM_TIMEOUT must be a number of seconds, got {timeout_text!r}"
+        ) from None
+    if llm_timeout <= 0:
+        raise ValueError(
+            f"READBACK_LLM_TIMEOUT must be greater than 0, got {llm_timeout!r}"
+        )
+
     return Settings(
         db_path=Path(_text(source, "READBACK_DB", DEFAULT_DB_PATH)),
         host=_text(source, "READBACK_HOST", DEFAULT_HOST),
@@ -91,6 +107,7 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         pass_threshold=pass_threshold,
         parent_pin=_text(source, "READBACK_PARENT_PIN", DEFAULT_PARENT_PIN),
         secret_key=secret_key,
+        llm_timeout=llm_timeout,
     )
 
 
@@ -100,6 +117,7 @@ __all__ = [
     "DEFAULT_PORT",
     "DEFAULT_LLM_BASE_URL",
     "DEFAULT_LLM_MODEL",
+    "DEFAULT_LLM_TIMEOUT",
     "DEFAULT_PASS_THRESHOLD",
     "Settings",
     "load_settings",

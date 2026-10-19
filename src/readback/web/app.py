@@ -14,6 +14,7 @@ import json
 import secrets
 import sqlite3
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 from flask import (
@@ -87,6 +88,17 @@ def create_app(settings: Settings | None = None) -> Flask:
     app.config["READBACK_SETTINGS"] = settings
     app.secret_key = settings.secret_key or secrets.token_hex(32)
 
+    @app.template_filter("short_date")
+    def short_date(value: object) -> str:
+        """Render a stored ISO timestamp as a short, human date."""
+        if not value:
+            return ""
+        try:
+            parsed = datetime.fromisoformat(str(value))
+        except (TypeError, ValueError):
+            return str(value)[:10]
+        return f"{parsed.strftime('%b')} {parsed.day}, {parsed.year}"
+
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
             g.db = connect(settings.db_path)
@@ -141,8 +153,12 @@ def create_app(settings: Settings | None = None) -> Flask:
         db = get_db()
         summaries = points_module.all_summaries(db)
         attempts = points_module.recent_attempts(db, limit=10)
+        max_points = max((s.points_total for s in summaries), default=0.0) or 1.0
         return render_template(
-            "dashboard.html", summaries=summaries, attempts=attempts
+            "dashboard.html",
+            summaries=summaries,
+            attempts=attempts,
+            max_points=max_points,
         )
 
     # ------------------------------------------------------------------ #
@@ -323,12 +339,14 @@ def create_app(settings: Settings | None = None) -> Flask:
             "AS attempts"
         ).fetchone()
         summaries = points_module.all_summaries(db)
+        max_points = max((s.points_total for s in summaries), default=0.0) or 1.0
         return render_template(
             "parent.html",
             drafts=drafts,
             books=books,
             counts=counts,
             summaries=summaries,
+            max_points=max_points,
         )
 
     @app.post("/parent/reader")

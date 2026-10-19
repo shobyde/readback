@@ -88,6 +88,7 @@ Environment variables, all optional except the database path:
 | `READBACK_LLM_BASE_URL` | `http://localhost:11434/v1` | OpenAI-compatible base URL |
 | `READBACK_LLM_API_KEY` | empty | Bearer token, empty for local models |
 | `READBACK_LLM_MODEL` | `llama3.1:8b` | Model name |
+| `READBACK_LLM_TIMEOUT` | `120` | Seconds to wait for a completion, raise it for slow local models |
 | `READBACK_PASS_THRESHOLD` | `0.8` | Fraction correct needed to pass |
 | `READBACK_PARENT_PIN` | empty | If set, `/parent/*` requires this PIN via session |
 | `READBACK_SECRET_KEY` | random per process | Flask session signing key |
@@ -95,7 +96,7 @@ Environment variables, all optional except the database path:
 `config.Settings` is a frozen dataclass with exactly these fields:
 `db_path: Path`, `host: str`, `port: int`, `llm_base_url: str`,
 `llm_api_key: str`, `llm_model: str`, `pass_threshold: float`,
-`parent_pin: str`, `secret_key: str`.
+`parent_pin: str`, `secret_key: str`, `llm_timeout: float`.
 
 `load_settings(env: Mapping[str, str] | None = None) -> Settings` reads from
 `os.environ` when `env` is None, coerces types, and raises `ValueError` for a

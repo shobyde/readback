@@ -1,29 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Readers · Readback{% endblock %}
 {% block content %}
-<h1>Readers</h1>
+<div class="page-head">
+  <div>
+    <p class="eyebrow">The family shelf</p>
+    <h1>Readers</h1>
+    <p class="lede">Points, finished books, and the quizzes waiting on the shelf.</p>
+  </div>
+</div>
 
 {% if summaries %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Reader</th>
-        <th scope="col">Points</th>
-        <th scope="col">Books passed</th>
-        <th scope="col">Quizzes taken</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for summary in summaries %}
-        <tr>
-          <td><a href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">{{ summary.name }}</a></td>
-          <td>{{ "%.2f"|format(summary.points_total) }}</td>
-          <td>{{ summary.books_passed }}</td>
-          <td>{{ summary.attempts }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <span class="num">{{ summaries|length }}</span>
+      <span class="label">Readers</span>
+    </div>
+    <div class="stat-card">
+      <span class="num">{{ summaries|sum(attribute='books_passed') }}</span>
+      <span class="label">Books passed</span>
+    </div>
+    <div class="stat-card">
+      <span class="num">{{ "%.2f"|format(summaries|sum(attribute='points_total')) }}</span>
+      <span class="label">Points earned</span>
+    </div>
+  </div>
+
+  <div class="reader-grid">
+    {% for summary in summaries %}
+      <a class="reader-card" href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">
+        <div class="top">
+          <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
+          <h2>{{ summary.name }}</h2>
+          <span class="points">{{ "%.2f"|format(summary.points_total) }} <small>pts</small></span>
+        </div>
+        <p class="sub">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} passed · {{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</p>
+        <div class="meter" role="presentation">
+          <span style="width: {{ ((summary.points_total / max_points) * 100)|round(0) }}%"></span>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
 {% else %}
   <p class="empty">No readers yet. Add one in the <a href="{{ url_for('parent_index') }}">parent area</a>.</p>
 {% endif %}
@@ -35,9 +51,9 @@
       <tr>
         <th scope="col">Reader</th>
         <th scope="col">Book</th>
-        <th scope="col">Score</th>
+        <th scope="col" class="num">Score</th>
         <th scope="col">Result</th>
-        <th scope="col">Points</th>
+        <th scope="col" class="num">Points</th>
         <th scope="col">When</th>
       </tr>
     </thead>
@@ -45,11 +61,17 @@
       {% for attempt in attempts %}
         <tr>
           <td>{{ attempt.reader_name }}</td>
-          <td><a href="{{ url_for('attempt_result', attempt_id=attempt.attempt_id) }}">{{ attempt.book_title }}</a></td>
-          <td>{{ "%.1f"|format(attempt.score * 100) }}% ({{ attempt.correct }}/{{ attempt.total }})</td>
-          <td>{{ "Passed" if attempt.passed else "Not passed" }}</td>
-          <td>{{ "%.2f"|format(attempt.points_awarded) }}</td>
-          <td>{{ attempt.submitted_at }}</td>
+          <td class="wrap"><a href="{{ url_for('attempt_result', attempt_id=attempt.attempt_id) }}">{{ attempt.book_title }}</a></td>
+          <td class="num">{{ "%.1f"|format(attempt.score * 100) }}% <span class="meta">({{ attempt.correct }}/{{ attempt.total }})</span></td>
+          <td>
+            {% if attempt.passed %}
+              <span class="badge badge-pass">Passed</span>
+            {% else %}
+              <span class="badge badge-fail">Not passed</span>
+            {% endif %}
+          </td>
+          <td class="num">{{ "%.2f"|format(attempt.points_awarded) }}</td>
+          <td class="meta">{{ attempt.submitted_at|short_date }}</td>
         </tr>
       {% endfor %}
     </tbody>
@@ -57,6 +79,4 @@
 {% else %}
   <p class="empty">No submitted quizzes yet.</p>
 {% endif %}
-
-<p><a href="{{ url_for('parent_index') }}">Parent area: readers, quizzes, and books</a></p>
 {% endblock %}
