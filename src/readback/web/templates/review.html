@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Review quiz · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / Review</p>
+
+<h1>Review: {{ book.title if book else "Book " ~ quiz.book_id }}</h1>
+{% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
+<p class="meta">Status: <strong>{{ quiz.status }}</strong> · {{ quiz.questions|length }} questions · model {{ quiz.model or "unknown" }}</p>
+
+{% if problems %}
+  <div class="problems">
+    <h2>Not ready to approve</h2>
+    <ul>
+      {% for problem in problems %}
+        <li>{{ problem }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+{% for question in quiz.questions %}
+  <section class="review-question">
+    <h2>Question {{ question.ordinal }}</h2>
+    <form method="post" action="{{ url_for('parent_question_edit', question_id=question.id) }}" class="edit-form">
+      <label for="prompt-{{ question.id }}">Prompt</label>
+      <textarea id="prompt-{{ question.id }}" name="prompt" rows="2" required>{{ question.prompt }}</textarea>
+
+      {% for index in choice_indexes %}
+        <label for="choice-{{ question.id }}-{{ index }}">Choice {{ index }}</label>
+        <input id="choice-{{ question.id }}-{{ index }}" type="text" name="choice_{{ index }}" value="{{ question.choices[index] if index < question.choices|length else '' }}" required>
+      {% endfor %}
+
+      <label for="answer-{{ question.id }}">Correct choice</label>
+      <select id="answer-{{ question.id }}" name="answer_index">
+        {% for index in choice_indexes %}
+          <option value="{{ index }}"{% if index == question.answer_index %} selected{% endif %}>{{ index }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="explanation-{{ question.id }}">Explanation</label>
+      <textarea id="explanation-{{ question.id }}" name="explanation" rows="2">{{ question.explanation }}</textarea>
+
+      <p class="actions"><button type="submit">Save question</button></p>
+    </form>
+
+    <form method="post" action="{{ url_for('parent_question_delete', question_id=question.id) }}" class="delete-form">
+      <button type="submit" class="danger">Delete question</button>
+    </form>
+  </section>
+{% else %}
+  <p class="empty">This quiz has no questions.</p>
+{% endfor %}
+
+<h2>Approve or reject</h2>
+<div class="decision-grid">
+  <form method="post" action="{{ url_for('parent_quiz_approve', quiz_id=quiz.id) }}">
+    <p>Approving makes this quiz available to every reader.</p>
+    <button type="submit">Approve quiz</button>
+  </form>
+
+  <form method="post" action="{{ url_for('parent_quiz_reject', quiz_id=quiz.id) }}">
+    <label for="reject-note">Note (optional)</label>
+    <input id="reject-note" type="text" name="note">
+    <button type="submit" class="danger">Reject quiz</button>
+  </form>
+</div>
+
+<p><a href="{{ url_for('parent_index') }}">Back to the parent area</a></p>
+{% endblock %}

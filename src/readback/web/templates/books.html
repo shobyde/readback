@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Books · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / Books</p>
+
+<h1>Books</h1>
+
+<h2>Import a CSV</h2>
+<form method="post" action="{{ url_for('parent_books_import') }}" enctype="multipart/form-data" class="inline-form">
+  <label for="csv-file">CSV file</label>
+  <input id="csv-file" type="file" name="csv" accept=".csv,text/csv" required>
+  <button type="submit">Import books</button>
+</form>
+<p class="hint">Columns: title, author, isbn, points, grade level, notes. Title is required.</p>
+
+<h2>Book list</h2>
+{% if books %}
+  <table class="list">
+    <thead>
+      <tr>
+        <th scope="col">Title</th>
+        <th scope="col">Author</th>
+        <th scope="col">ISBN</th>
+        <th scope="col">Points</th>
+        <th scope="col">Grade</th>
+        <th scope="col">Latest quiz</th>
+        <th scope="col">Generate</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for book in books %}
+        <tr>
+          <td>{{ book.title }}</td>
+          <td>{{ book.author }}</td>
+          <td>{{ book.isbn or "" }}</td>
+          <td>{{ "%.2f"|format(book.points) }}</td>
+          <td>{{ book.grade_level }}</td>
+          <td>{{ latest.get(book.id, "none") }}</td>
+          <td>
+            <form method="post" action="{{ url_for('parent_books_generate', book_id=book.id) }}" class="inline-form">
+              <label class="sr-only" for="questions-{{ book.id }}">Questions</label>
+              <input id="questions-{{ book.id }}" type="number" name="num_questions" value="{{ default_questions }}" min="1" max="20">
+              <button type="submit">Generate</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No books yet. Import a CSV above.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Unlock parent area · Readback{% endblock %}
+{% block content %}
+<h1>Parent area</h1>
+<p>Enter the parent PIN to continue.</p>
+
+<form method="post" action="{{ url_for('parent_unlock_submit') }}" class="inline-form">
+  <label for="pin">PIN</label>
+  <input id="pin" type="password" name="pin" inputmode="numeric" autocomplete="current-password" required>
+  <button type="submit">Unlock</button>
+</form>
+{% endblock %}

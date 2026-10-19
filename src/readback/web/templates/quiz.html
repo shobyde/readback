@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Quiz: {{ book.title if book else "Book" }} · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / <a href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">{{ summary.name }}</a> / Quiz</p>
+
+<h1>{{ book.title if book else "Book " ~ quiz.book_id }}</h1>
+{% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
+
+<form method="post" action="{{ url_for('quiz_submit', reader_id=summary.reader_id, quiz_id=quiz.id) }}" class="quiz-form">
+  {% for question in quiz.questions %}
+    <fieldset class="question">
+      <legend>Question {{ loop.index }}</legend>
+      <p class="prompt">{{ question.prompt }}</p>
+      {% for choice in question.choices %}
+        <label class="choice">
+          <input type="radio" name="q_{{ question.id }}" value="{{ loop.index0 }}">
+          <span>{{ choice }}</span>
+        </label>
+      {% endfor %}
+    </fieldset>
+  {% endfor %}
+
+  <p class="actions">
+    <button type="submit">Submit answers</button>
+  </p>
+</form>
+
+<p class="hint">Answer every question. Unanswered questions count as wrong.</p>
+{% endblock %}

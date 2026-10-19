@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ summary.name }} · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / {{ summary.name }}</p>
+
+<h1>{{ summary.name }}</h1>
+<p class="stat-line">
+  <strong>{{ "%.2f"|format(summary.points_total) }}</strong> points ·
+  {{ summary.books_passed }} books passed ·
+  {{ summary.attempts }} quizzes taken
+</p>
+
+<h2>Quizzes ready to take</h2>
+{% if quizzes %}
+  <table class="list">
+    <thead>
+      <tr>
+        <th scope="col">Book</th>
+        <th scope="col">Author</th>
+        <th scope="col">Questions</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for quiz in quizzes %}
+        {% set book = books.get(quiz.book_id) %}
+        <tr>
+          <td>{{ book.title if book else "Book " ~ quiz.book_id }}</td>
+          <td>{{ book.author if book else "" }}</td>
+          <td>{{ quiz.questions|length }}</td>
+          <td><a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">Take quiz</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No approved quizzes yet. A parent needs to approve a quiz first.</p>
+{% endif %}
+
+<h2>Passed books</h2>
+{% if passed %}
+  <table class="list">
+    <thead>
+      <tr>
+        <th scope="col">Book</th>
+        <th scope="col">Author</th>
+        <th scope="col">Points</th>
+        <th scope="col">Earned</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in passed %}
+        <tr>
+          <td>{{ item.title }}</td>
+          <td>{{ item.author }}</td>
+          <td>{{ "%.2f"|format(item.points) }}</td>
+          <td>{{ item.created_at }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No passed books yet.</p>
+{% endif %}
+{% endblock %}

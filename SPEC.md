@@ -252,7 +252,8 @@ def list_approved(conn, book_id: int | None = None) -> list[Quiz]
 
 # readback/points.py
 def start_attempt(conn, quiz_id: int, reader_id: int) -> int
-def submit_attempt(conn, attempt_id: int, answers: dict[int, int]) -> AttemptResult
+def submit_attempt(conn, attempt_id: int, answers: dict[int, int],
+                   *, pass_threshold: float = 0.8) -> AttemptResult
     # answers maps question_id -> choice_index; a missing answer is incorrect
 def reader_summary(conn, reader_id: int) -> ReaderSummary
 def all_summaries(conn) -> list[ReaderSummary]

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Parent area · Readback{% endblock %}
+{% block content %}
+<h1>Parent area</h1>
+
+<ul class="counts">
+  <li><strong>{{ counts['readers'] }}</strong> readers</li>
+  <li><strong>{{ counts['books'] }}</strong> books</li>
+  <li><strong>{{ counts['drafts'] }}</strong> drafts to review</li>
+  <li><strong>{{ counts['approved'] }}</strong> approved quizzes</li>
+  <li><strong>{{ counts['attempts'] }}</strong> quizzes taken</li>
+</ul>
+
+<h2>Draft quizzes waiting for review</h2>
+{% if drafts %}
+  <table class="list">
+    <thead>
+      <tr>
+        <th scope="col">Book</th>
+        <th scope="col">Questions</th>
+        <th scope="col">Created</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for quiz in drafts %}
+        {% set book = books.get(quiz.book_id) %}
+        <tr>
+          <td>{{ book.title if book else "Book " ~ quiz.book_id }}</td>
+          <td>{{ quiz.questions|length }}</td>
+          <td>{{ quiz.created_at }}</td>
+          <td><a href="{{ url_for('parent_quiz', quiz_id=quiz.id) }}">Review</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No drafts waiting. Generate one from the <a href="{{ url_for('parent_books') }}">book list</a>.</p>
+{% endif %}
+
+<h2>Readers</h2>
+<form method="post" action="{{ url_for('parent_create_reader') }}" class="inline-form">
+  <label for="reader-name">New reader name</label>
+  <input id="reader-name" type="text" name="name" required>
+  <button type="submit">Add reader</button>
+</form>
+
+{% if summaries %}
+  <table class="list">
+    <thead>
+      <tr>
+        <th scope="col">Reader</th>
+        <th scope="col">Points</th>
+        <th scope="col">Books passed</th>
+        <th scope="col">Quizzes taken</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for summary in summaries %}
+        <tr>
+          <td><a href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">{{ summary.name }}</a></td>
+          <td>{{ "%.2f"|format(summary.points_total) }}</td>
+          <td>{{ summary.books_passed }}</td>
+          <td>{{ summary.attempts }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p class="empty">No readers yet.</p>
+{% endif %}
+
+<h2>Books and export</h2>
+<ul class="links">
+  <li><a href="{{ url_for('parent_books') }}">Manage books and import a CSV</a></li>
+  <li><a href="{{ url_for('parent_export') }}">Download the reading log (CSV)</a></li>
+</ul>
+{% endblock %}

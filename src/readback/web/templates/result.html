@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Result · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / <a href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">{{ attempt['reader_name'] }}</a> / Result</p>
+
+<h1>Quiz result</h1>
+
+{% if attempt['submitted_at'] %}
+  <div class="result-card {{ 'passed' if attempt['passed'] else 'failed' }}">
+    <p class="verdict">{{ "Passed" if attempt['passed'] else "Not passed" }}</p>
+    <p class="score">{{ "%.1f"|format((attempt['score'] or 0) * 100) }}%</p>
+    <p>{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
+  </div>
+
+  <table class="list">
+    <tbody>
+      <tr><th scope="row">Book</th><td>{{ attempt['book_title'] }}{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</td></tr>
+      <tr><th scope="row">Points earned</th><td>{{ "%.2f"|format(points_awarded) }}</td></tr>
+      <tr><th scope="row">Points total</th><td>{{ "%.2f"|format(summary.points_total) }}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Questions</h2>
+  {% for question in questions %}
+    <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
+      <h3>Question {{ loop.index }}</h3>
+      <p class="prompt">{{ question.prompt }}</p>
+      <p>Your answer: {{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
+      {% if not question.is_correct %}
+        <p>Correct answer: {{ question.correct_text }}</p>
+      {% endif %}
+      {% if question.explanation %}<p class="explanation">{{ question.explanation }}</p>{% endif %}
+    </section>
+  {% endfor %}
+{% else %}
+  <p class="empty">This quiz attempt was not submitted.</p>
+{% endif %}
+
+<p><a href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to {{ attempt['reader_name'] }}'s page</a></p>
+{% endblock %}
