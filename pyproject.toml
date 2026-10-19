@@ -32,7 +32,7 @@ readback = "readback.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"readback.web" = ["templates/*.html", "static/*.css"]
+"readback.web" = ["templates/*.html", "static/*.css", "static/*.svg", "static/fonts/*.woff2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -6,6 +6,9 @@ Readback keeps a book list, generates short multiple-choice quizzes from book
 metadata, holds every generated quiz for parent review, and records reader
 attempts and points in a local SQLite database.
 
+It has two surfaces: a light, playful shelf for young readers, and a calmer
+grown-ups' corner for approving quizzes and managing the library.
+
 <p align="center">
   <img src="docs/media/tour.gif" alt="A reader opens a quiz, answers five questions, submits, and sees a passing result" width="860">
 </p>
@@ -29,13 +32,17 @@ subscribe to, for example Ollama or LM Studio on the same machine.
 
 ## What it looks like
 
-| Readers | Taking a quiz |
-| --- | --- |
-| <img src="docs/media/dashboard.png" alt="Dashboard with reader cards, points, and recent quizzes" width="430"> | <img src="docs/media/quiz.png" alt="A five question quiz with radio choices" width="430"> |
+<p align="center">
+  <img src="docs/media/dashboard.png" alt="The family reading shelf with reader cards, points, and recent quiz results" width="860">
+</p>
 
-| Result | Parent review |
+| Taking a quiz | Parent review |
 | --- | --- |
-| <img src="docs/media/result.png" alt="Passed result with score ring, points, and answer explanations" width="430"> | <img src="docs/media/review.png" alt="Parent review form with editable question, choices, and correct answer" width="430"> |
+| <img src="docs/media/quiz.png" alt="A five question quiz with lettered choices and a visible selection state" width="430"> | <img src="docs/media/review.png" alt="Parent review form with editable question, choices, and a radio picker for the correct answer" width="430"> |
+
+<p align="center">
+  <img src="docs/media/result.png" alt="A passed result with a score ring, points sticker, Nib the bookworm, and answer explanations" width="860">
+</p>
 
 ## Quick start
 

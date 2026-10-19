@@ -6,13 +6,19 @@
   <title>{% block title %}Readback{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{{ 'parent' if request.path.startswith('/parent') else 'kids' }}">
   {% set in_parent = request.path.startswith('/parent') %}
   <header class="site-header">
-    <a class="brand" href="{{ url_for('dashboard') }}">Readback</a>
+    <a class="brand" href="{{ url_for('dashboard') }}">
+      <img src="{{ url_for('static', filename='bookmark.svg') }}" alt="">
+      <span class="brand-text">
+        <span class="brand-name">Readback</span>
+        <span class="brand-sub">a cozy shelf</span>
+      </span>
+    </a>
     <nav class="site-nav" aria-label="Main">
       <a href="{{ url_for('dashboard') }}"{% if not in_parent %} class="active" aria-current="page"{% endif %}>Readers</a>
-      <a href="{{ url_for('parent_index') }}"{% if in_parent %} class="active" aria-current="page"{% endif %}>Parent area</a>
+      <a href="{{ url_for('parent_index') }}"{% if in_parent %} class="active" aria-current="page"{% endif %}><svg class="nav-lock" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Parent area</a>
     </nav>
   </header>
 
@@ -31,7 +37,11 @@
   </main>
 
   <footer class="site-footer">
-    <p>Readback keeps the reading log on this machine.</p>
+    <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#5E6F3A" stroke-width="2" stroke-linecap="round">
+      <rect x="5" y="10" width="14" height="10" rx="3"/>
+      <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+    </svg>
+    <p>Everything on this shelf stays on this machine.</p>
   </footer>
 </body>
 </html>

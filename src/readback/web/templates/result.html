@@ -5,33 +5,36 @@
 
 {% if attempt['submitted_at'] %}
   {% set pct = (attempt['score'] or 0) * 100 %}
-  <section class="result-hero {{ 'passed' if attempt['passed'] else 'failed' }}">
+  <section class="celebrate {{ 'passed' if attempt['passed'] else 'missed' }}">
     <div class="score-ring" style="--score: {{ pct|round(1) }}">
       <div class="score-ring-inner">
-        <strong>{{ "%.1f"|format(pct) }}%</strong>
+        <strong>{{ pct|round(0)|int }}%</strong>
+        <span class="sr-only">{{ "%.1f"|format(pct) }}%</span>
         <span>score</span>
       </div>
     </div>
     <div>
-      <p class="eyebrow">{{ "Nice work" if attempt['passed'] else "Keep going" }}, {{ attempt['reader_name'] }}</p>
-      <h1>{{ "Passed" if attempt['passed'] else "Not passed" }}</h1>
+      <p class="eyebrow">
+        {{ "All done" if attempt['passed'] else "Good try" }}
+        <span class="badge {{ 'badge-pass' if attempt['passed'] else 'badge-fail' }}">{{ "Passed" if attempt['passed'] else "Try again" }}</span>
+      </p>
+      <h1>{% if attempt['passed'] %}You did it, {{ attempt['reader_name'] }}!{% else %}Almost there, {{ attempt['reader_name'] }}.{% endif %}</h1>
       <p class="book"><strong>{{ attempt['book_title'] }}</strong>{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</p>
       <p>{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
-      <ul class="chips">
-        <li class="chip"><strong>Points earned</strong> +{{ "%.2f"|format(points_awarded) }}</li>
-        <li class="chip"><strong>Points total</strong> {{ "%.2f"|format(summary.points_total) }}</li>
-      </ul>
+      <span class="sticker-points">{% if points_awarded %}🎉 {% endif %}+{{ points_awarded|points }} points</span>
+      <p class="points-line">Points earned {{ "%.2f"|format(points_awarded) }} · Points total {{ "%.2f"|format(summary.points_total) }}</p>
       <div class="result-actions">
-        <a class="button" href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to {{ attempt['reader_name'] }}'s shelf</a>
-        <a class="button secondary" href="{{ url_for('dashboard') }}">All readers</a>
+        <a class="button" href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to my shelf</a>
+        <a class="button secondary" href="{{ url_for('dashboard') }}">See all readers</a>
       </div>
     </div>
+    <img class="celebrate-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="Nib celebrating">
   </section>
 
-  <h2>Questions</h2>
+  <h2>Let's look at the answers</h2>
   {% for question in questions %}
     <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
-      <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Review</span>{% endif %}</h3>
+      <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Worth another look</span>{% endif %}</h3>
       <p class="prompt">{{ question.prompt }}</p>
       <p class="answer-line"><strong>Your answer</strong><br>{{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
       {% if not question.is_correct %}

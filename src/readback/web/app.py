@@ -99,6 +99,17 @@ def create_app(settings: Settings | None = None) -> Flask:
             return str(value)[:10]
         return f"{parsed.strftime('%b')} {parsed.day}, {parsed.year}"
 
+    @app.template_filter("points")
+    def points_filter(value: object) -> str:
+        """Show whole points as whole numbers, decimals only when needed."""
+        try:
+            amount = float(str(value or 0))
+        except (TypeError, ValueError):
+            return "0"
+        if abs(amount - round(amount)) < 0.001:
+            return f"{amount:.0f}"
+        return f"{amount:.1f}".rstrip("0").rstrip(".")
+
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
             g.db = connect(settings.db_path)
@@ -187,12 +198,20 @@ def create_app(settings: Settings | None = None) -> Flask:
         summary = require_reader(db, reader_id)
         quizzes = review_module.list_approved(db)
         books = {book.id: book for book in books_module.list_books(db)}
+        passed = passed_books(db, reader_id)
+        passed_ids = {item["book_id"] for item in passed}
+        quiz_by_book = {quiz.book_id: quiz for quiz in quizzes}
+        for item in passed:
+            quiz = quiz_by_book.get(item["book_id"])
+            item["quiz_id"] = quiz.id if quiz is not None else None
+        next_quizzes = [quiz for quiz in quizzes if quiz.book_id not in passed_ids]
         return render_template(
             "reader.html",
             summary=summary,
-            quizzes=quizzes,
+            next_quizzes=next_quizzes,
             books=books,
-            passed=passed_books(db, reader_id),
+            passed=passed,
+            passed_ids=passed_ids,
         )
 
     def approved_quiz(db: sqlite3.Connection, quiz_id: int):

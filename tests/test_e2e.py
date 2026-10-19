@@ -249,5 +249,5 @@ def test_full_reading_cycle_from_empty_database(tmp_path, monkeypatch):
 
     dashboard = client.get("/").get_data(as_text=True)
     assert "Ruth" in dashboard
-    assert "5.00" in dashboard
+    assert "5 pts" in dashboard
     assert "Charlotte's Web" in html.unescape(dashboard)

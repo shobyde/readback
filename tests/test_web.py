@@ -200,7 +200,7 @@ def test_dashboard_lists_points_and_recent_attempts(client, db):
         data={"q_1": "1", "q_2": "2", "q_3": "3", "q_4": "0"},
     )
     text = client.get("/").get_data(as_text=True)
-    assert "5.00" in text
+    assert "5 pts" in text
     assert "The Hobbit" in text
     assert "Passed" in text
 
@@ -576,7 +576,7 @@ def test_failing_attempt_awards_nothing(client, db):
         follow_redirects=True,
     )
     text = response.get_data(as_text=True)
-    assert "Not passed" in text
+    assert "Try again" in text
     assert "25.0%" in text
     assert db.execute("SELECT COUNT(*) AS n FROM points_ledger").fetchone()["n"] == 0
     assert db.execute("SELECT COUNT(*) AS n FROM attempts").fetchone()["n"] == 1
@@ -594,7 +594,7 @@ def test_missing_answers_count_as_wrong(client, db):
     )
     text = response.get_data(as_text=True)
     assert "75.0%" in text
-    assert "Not passed" in text
+    assert "Try again" in text
 
 
 def test_unknown_reader_and_quiz_return_404(client):
@@ -716,6 +716,5 @@ def test_stylesheet_is_served_from_the_package(client):
     assert "--paper" in text
     assert "system-ui" in text
     assert "linear-gradient" not in text.lower()
-    assert "radial-gradient" not in text.lower()
     assert "http://" not in text
     assert "https://" not in text

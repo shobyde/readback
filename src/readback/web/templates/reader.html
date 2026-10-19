@@ -6,57 +6,55 @@
 <section class="reader-hero">
   <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
   <div>
-    <h1>{{ summary.name }}</h1>
+    <h1>{{ summary.name }}'s shelf</h1>
     <ul class="chips">
-      <li class="chip"><strong>{{ "%.2f"|format(summary.points_total) }}</strong> points</li>
-      <li class="chip"><strong>{{ summary.books_passed }}</strong> book{{ 's' if summary.books_passed != 1 else '' }} passed</li>
+      <li class="chip"><strong>{{ summary.points_total|points }}</strong> points</li>
+      <li class="chip"><strong>{{ summary.books_passed }}</strong> book{{ 's' if summary.books_passed != 1 else '' }} finished</li>
       <li class="chip"><strong>{{ summary.attempts }}</strong> quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</li>
     </ul>
   </div>
+  <img class="hero-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="">
 </section>
 
-<h2>Quizzes ready to take</h2>
-{% if quizzes %}
+<h2>Next up</h2>
+{% if next_quizzes %}
   <div class="quiz-grid">
-    {% for quiz in quizzes %}
+    {% for quiz in next_quizzes %}
       {% set book = books.get(quiz.book_id) %}
-      <article class="quiz-card">
-        <h3>{{ book.title if book else "Book " ~ quiz.book_id }}</h3>
-        <p class="byline">{{ book.author if book else "" }}</p>
+      <article class="book-card">
+        <span class="mini-cover" aria-hidden="true">{{ (book.title if book else "B")[:1]|upper }}</span>
+        <div class="book-info">
+          <h3>{{ book.title if book else "Book " ~ quiz.book_id }}</h3>
+          <p class="byline">{{ book.author if book else "" }}</p>
+        </div>
         <div class="foot">
-          <span class="meta">{{ quiz.questions|length }} questions</span>
+          <span class="points-tag">{{ (book.points if book else 0)|points }} pts</span>
           <a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">Take quiz</a>
         </div>
       </article>
     {% endfor %}
   </div>
 {% else %}
-  <p class="empty">No approved quizzes yet. A parent needs to approve a quiz first.</p>
+  <p class="empty">Every book on the shelf is finished. Ask a grown-up to add another one.</p>
 {% endif %}
 
-<h2>Passed books</h2>
+<h2>Books you finished</h2>
 {% if passed %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Book</th>
-        <th scope="col">Author</th>
-        <th scope="col" class="num">Points</th>
-        <th scope="col">Earned</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in passed %}
-        <tr>
-          <td class="wrap">{{ item.title }}</td>
-          <td>{{ item.author }}</td>
-          <td class="num">{{ "%.2f"|format(item.points) }}</td>
-          <td class="meta">{{ item.created_at|short_date }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <ul class="finished-list">
+    {% for item in passed %}
+      <li>
+        <span class="check" aria-hidden="true">✓</span>
+        <span class="book-title">{{ item.title }}</span>
+        <span class="meta">by {{ item.author }}</span>
+        <span class="points-tag">{{ item.points|points }} pts</span>
+        <time class="when">{{ item.created_at|short_date }}</time>
+        {% if item.quiz_id %}
+          <a class="button secondary" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=item.quiz_id) }}">Read again</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
 {% else %}
-  <p class="empty">No passed books yet.</p>
+  <p class="empty">Nothing here yet. Your first finished book will land on this shelf.</p>
 {% endif %}
 {% endblock %}

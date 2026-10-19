@@ -9,26 +9,33 @@
     <h1>{{ book.title if book else "Book " ~ quiz.book_id }}</h1>
     {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
   </div>
-  <p class="quiz-progress">{{ quiz.questions|length }} questions · {{ summary.name }}</p>
+  <p class="nib-says">
+    <img src="{{ url_for('static', filename='nib.svg') }}" alt="">
+    <span>Take your time, {{ summary.name }}. Pick one answer for each question.</span>
+  </p>
 </div>
 
 <form method="post" action="{{ url_for('quiz_submit', reader_id=summary.reader_id, quiz_id=quiz.id) }}" class="quiz-form">
   {% for question in quiz.questions %}
     <fieldset class="question">
       <legend>Question {{ loop.index }} of {{ quiz.questions|length }}</legend>
-      <p class="prompt">{{ question.prompt }}</p>
-      {% for choice in question.choices %}
-        <label class="choice">
-          <input type="radio" name="q_{{ question.id }}" value="{{ loop.index0 }}">
-          <span>{{ choice }}</span>
-        </label>
-      {% endfor %}
+      <div class="question-body">
+        <p class="prompt">{{ question.prompt }}</p>
+        {% for choice in question.choices %}
+          <label class="choice">
+            <input type="radio" name="q_{{ question.id }}" value="{{ loop.index0 }}">
+            <span class="choice-letter">{{ "ABCD"[loop.index0] }}</span>
+            <span>{{ choice }}</span>
+            <span class="choice-dot" aria-hidden="true"></span>
+          </label>
+        {% endfor %}
+      </div>
     </fieldset>
   {% endfor %}
 
   <div class="quiz-actions">
-    <p class="hint">Answer every question. Unanswered questions count as wrong.</p>
-    <button type="submit">Submit answers</button>
+    <p class="hint">Every question needs an answer. Skipped ones count as wrong.</p>
+    <button type="submit">Check my answers</button>
   </div>
 </form>
 {% endblock %}

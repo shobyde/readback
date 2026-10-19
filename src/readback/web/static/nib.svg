@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 220" role="img" aria-labelledby="nibTitle nibDesc">
+  <title id="nibTitle">Nib the bookworm</title>
+  <desc id="nibDesc">A smiling green bookworm in an orange scarf popping out of an open book.</desc>
+  <ellipse cx="120" cy="203" rx="74" ry="9" fill="#E3D6BB" opacity="0.75"/>
+
+  <!-- open book -->
+  <path d="M36 148 Q120 130 204 148 L204 198 Q120 180 36 198 Z" fill="#5E6F3A" stroke="#3E4A33" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M50 148 Q86 138 119 145 L119 187 Q86 180 50 190 Z" fill="#FFF8EA" stroke="#7A4A28" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M190 148 Q154 138 121 145 L121 187 Q154 180 190 190 Z" fill="#FFF8EA" stroke="#7A4A28" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M62 158 Q86 151 107 156 M62 169 Q86 162 107 167 M178 158 Q154 151 133 156 M178 169 Q154 162 133 167" fill="none" stroke="#D8C7A6" stroke-width="2.4" stroke-linecap="round"/>
+
+  <!-- worm body -->
+  <path d="M120 150 C99 134 99 115 117 106 C137 96 141 79 126 66" fill="none" stroke="#3E4A33" stroke-width="34" stroke-linecap="round"/>
+  <path d="M120 150 C99 134 99 115 117 106 C137 96 141 79 126 66" fill="none" stroke="#8FA76A" stroke-width="27" stroke-linecap="round"/>
+  <path d="M104 126 q7 7 15 5 M112 108 q8 6 16 2 M124 88 q8 4 14 -1" fill="none" stroke="#5E6F3A" stroke-width="2.2" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- head -->
+  <circle cx="125" cy="62" r="25" fill="#8FA76A" stroke="#3E4A33" stroke-width="3"/>
+  <circle cx="116" cy="58" r="8" fill="#FFF8EA"/>
+  <circle cx="134" cy="58" r="8" fill="#FFF8EA"/>
+  <circle cx="117.5" cy="59" r="3.6" fill="#2A2219"/>
+  <circle cx="132.5" cy="59" r="3.6" fill="#2A2219"/>
+  <circle cx="109" cy="70" r="4.2" fill="#E26A28" opacity="0.35"/>
+  <circle cx="141" cy="70" r="4.2" fill="#E26A28" opacity="0.35"/>
+  <path d="M118 73 q7 6 14 0" fill="none" stroke="#2A2219" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- scarf -->
+  <path d="M104 88 q21 11 42 0" fill="none" stroke="#E26A28" stroke-width="7" stroke-linecap="round"/>
+  <path d="M144 91 l7 12 -9 3 -3 -12" fill="#E26A28"/>
+
+  <!-- sparkles -->
+  <path d="M191 62 l3.2 9.4 9.4 3.2 -9.4 3.2 -3.2 9.4 -3.2 -9.4 -9.4 -3.2 9.4 -3.2 z" fill="#F2A63A"/>
+  <path d="M57 60 l2.4 7 7 2.4 -7 2.4 -2.4 7 -2.4 -7 -7 -2.4 7 -2.4 z" fill="#E26A28" opacity="0.8"/>
+  <circle cx="70" cy="104" r="3.4" fill="#5E6F3A" opacity="0.55"/>
+  <circle cx="196" cy="110" r="4" fill="#F2A63A" opacity="0.8"/>
+</svg>

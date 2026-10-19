@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" role="img" aria-label="Readback book mark">
+  <path d="M6 10 Q20 6 20 10 L20 32 Q20 28 6 32 Z" fill="#FFF8EA" stroke="#7A4A28" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M34 10 Q20 6 20 10 L20 32 Q20 28 34 32 Z" fill="#FFF8EA" stroke="#7A4A28" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M20 17 c0 -4 6 -4 6 0 c0 3 -6 7 -6 7 c0 0 -6 -4 -6 -7 c0 -4 6 -4 6 0 z" fill="#E26A28"/>
+</svg>
