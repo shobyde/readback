@@ -6,9 +6,11 @@
 
 <div class="quiz-head">
   <div>
-    <p class="eyebrow">Reading quiz <span class="quiz-count">{{ total }} question{{ 's' if total != 1 else '' }}</span></p>
     <h1>{{ book.title if book else "Book " ~ quiz.book_id }}</h1>
-    {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
+    <p class="quiz-meta">
+      <span class="quiz-count">{{ total }} question{{ 's' if total != 1 else '' }}</span>
+      {% if book and book.author %}<span class="byline">by {{ book.author }}</span>{% endif %}
+    </p>
   </div>
   <p class="nib-says">
     <img src="{{ url_for('static', filename='nib.svg') }}" alt="">

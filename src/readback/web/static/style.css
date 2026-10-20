@@ -27,6 +27,9 @@
   /* Small print (meta, hints, crumbs, byline, points): >= 6:1 on card and
      parchment, still warm brown rather than grey. */
   --muted: #5f4e3b;
+  /* Placeholders read as a prompt, not as entered text, and still clear AA:
+     5.58:1 on --card, 5.24:1 on --paper. Browser defaults (4.36:1) fail. */
+  --placeholder: #71624e;
   --border: rgba(122, 74, 40, 0.18);
   --border-strong: rgba(122, 74, 40, 0.34);
   --fail: #8a3b2e;
@@ -89,6 +92,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
+  min-height: 44px;
   color: var(--ink);
   text-decoration: none;
 }
@@ -241,15 +245,6 @@ summary:focus-visible {
   outline-offset: 2px;
 }
 
-.eyebrow {
-  margin: 0 0 0.4rem;
-  color: var(--moss);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .lede {
   max-width: 38rem;
   color: var(--muted);
@@ -292,20 +287,19 @@ summary:focus-visible {
 .flash {
   margin: 0 0 0.5rem;
   padding: 0.7rem 0.95rem;
-  border: 1px solid var(--border);
-  border-left: 5px solid var(--ember);
+  border: 1.5px solid var(--ember);
   border-radius: var(--r-md);
   background: var(--card);
   font-weight: 600;
 }
 
 .flash-error {
-  border-left-color: var(--fail);
+  border-color: var(--fail);
   background: var(--fail-soft);
 }
 
 .flash-success {
-  border-left-color: var(--moss);
+  border-color: var(--moss);
   background: var(--pass-soft);
 }
 
@@ -409,7 +403,7 @@ summary:focus-visible {
 .reader-card {
   display: block;
   position: relative;
-  padding: 1.05rem 1.1rem 1rem 1.5rem;
+  padding: 1.05rem 1.2rem 1rem;
   border: 1.5px solid var(--border);
   border-radius: 22px;
   background: var(--card);
@@ -420,13 +414,16 @@ summary:focus-visible {
   transition: transform 160ms var(--ease-cozy), box-shadow 160ms var(--ease-cozy);
 }
 
+/* The reader's colour sits in a 2px notch under the top edge, the avatar ring
+   and the shelf meter: a bookmark stub, not a side tab down the card. */
 .reader-card::before {
   content: "";
   position: absolute;
-  left: 0;
   top: 0;
-  bottom: 0;
-  width: 10px;
+  left: 1.75rem;
+  right: 1.75rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
   background: var(--spine, var(--ember));
 }
 
@@ -609,7 +606,7 @@ table.list td {
 table.list th {
   background: var(--card-warm);
   color: var(--bark);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -744,6 +741,8 @@ select,
 textarea {
   width: 100%;
   max-width: 36rem;
+  /* Text controls are touch targets too: 39px was under the 44px floor. */
+  min-height: 44px;
   padding: 0.58rem 0.75rem;
   border: 1px solid rgba(122, 74, 40, 0.24);
   border-radius: var(--r-md);
@@ -754,6 +753,14 @@ textarea {
 
 textarea {
   resize: vertical;
+}
+
+/* The browser's default placeholder (#757575) measures 4.36:1 on the card.
+   This token reads as a prompt and still clears 4.5:1 on card and parchment. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
 }
 
 button,
@@ -902,7 +909,7 @@ form.inline-form:has(#reader-name) button {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 1.1rem 1.2rem 1.05rem 1.55rem;
+  padding: 1.1rem 1.2rem 1.05rem;
   border: 1.5px solid var(--border);
   border-radius: 22px;
   background: var(--card);
@@ -911,13 +918,16 @@ form.inline-form:has(#reader-name) button {
   transition: transform 160ms var(--ease-cozy), box-shadow 160ms var(--ease-cozy);
 }
 
+/* Colour identity lives in the mini cover's spine; the card keeps only the
+   2px bookmark notch so a shelf of cards is not a row of coloured tabs. */
 .book-card::before {
   content: "";
   position: absolute;
-  left: 0;
   top: 0;
-  bottom: 0;
-  width: 12px;
+  left: 1.75rem;
+  right: 1.75rem;
+  height: 2px;
+  border-radius: 0 0 2px 2px;
   background: var(--spine, var(--ember));
 }
 
@@ -1026,6 +1036,19 @@ form.inline-form:has(#reader-name) button {
   margin-bottom: 0.1rem;
 }
 
+/* Count and author sit on one quiet line under the title, never above it. */
+.quiz-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.65rem;
+  margin: 0.35rem 0 0;
+}
+
+.quiz-meta .byline {
+  font-size: 0.875rem;
+}
+
 .nib-says {
   display: flex;
   align-items: center;
@@ -1057,7 +1080,7 @@ fieldset.question legend {
   margin: 0;
   padding: 0.8rem 1.2rem 0;
   color: var(--moss);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1233,6 +1256,8 @@ label.choice:has(input:focus-visible) {
   background: conic-gradient(var(--ember) calc(var(--score) * 1%), var(--card-warm) 0);
 }
 
+/* One layer: the conic ring is the score, the disc inside is the card itself.
+   No second bordered plate nested in the ring. */
 .score-ring-inner {
   display: grid;
   place-items: center;
@@ -1240,7 +1265,6 @@ label.choice:has(input:focus-visible) {
   height: 118px;
   border-radius: 50%;
   background: var(--card);
-  border: 1.5px dashed var(--border);
   text-align: center;
 }
 
@@ -1253,7 +1277,7 @@ label.choice:has(input:focus-visible) {
 .score-ring-inner span {
   margin-top: 0.2rem;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1326,13 +1350,18 @@ label.choice:has(input:focus-visible) {
   margin: 1rem 0;
   padding: 1rem 1.15rem;
   border: 1.5px solid var(--border);
-  border-left: 6px solid var(--moss);
   border-radius: var(--r-lg);
   background: var(--card);
 }
 
+/* Correctness is carried by the whole hairline border and the heading's
+   pass/fail words, not by a 6px bar down the left edge. */
+.review-question.correct {
+  border-color: rgba(94, 111, 58, 0.34);
+}
+
 .review-question.incorrect {
-  border-left-color: var(--ember);
+  border-color: rgba(201, 86, 31, 0.34);
 }
 
 .review-question h2,
@@ -1349,7 +1378,7 @@ label.choice:has(input:focus-visible) {
 
 .review-question .answer-line strong {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1431,8 +1460,8 @@ label.choice:has(input:focus-visible) {
 .question-nav a {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border: 1.5px solid var(--border-strong);
   border-radius: 50%;
   background: var(--card);
@@ -1812,6 +1841,7 @@ label.choice:has(input:focus-visible) {
 
 .finished-list .button {
   margin-top: 0;
+  min-height: 44px;
   padding: 0.32rem 0.7rem;
   font-size: 0.82rem;
 }
@@ -1874,30 +1904,24 @@ label.choice:has(input:focus-visible) {
   position: absolute;
   inset: -2%;
   border-radius: 50%;
-  background: repeating-conic-gradient(
-    from 0deg,
-    var(--gold) 0deg 6deg,
-    transparent 6deg 18deg
-  );
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 48%, transparent 74%);
-  mask-image: radial-gradient(circle at 50% 50%, #000 0 48%, transparent 74%);
-  opacity: 0.45;
-  transform: rotate(-8deg);
+  /* One soft gold halo around Nib; the medallion ring is the only texture. */
+  background: radial-gradient(circle at 50% 50%, rgba(242, 166, 58, 0.32), rgba(242, 166, 58, 0) 64%);
+  opacity: 0.8;
   animation: starburst-in 700ms var(--ease-cozy) both;
 }
 
 .celebrate.missed .starburst {
-  opacity: 0.2;
+  opacity: 0.35;
 }
 
 @keyframes starburst-in {
   from {
-    transform: scale(0.82) rotate(-16deg);
+    transform: scale(0.86);
     opacity: 0;
   }
   to {
-    transform: scale(1) rotate(-8deg);
-    opacity: 0.45;
+    transform: scale(1);
+    opacity: 0.8;
   }
 }
 
@@ -1952,11 +1976,10 @@ label.choice:has(input:focus-visible) {
 
 .brand-sub {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.75rem;
 }
 
-fieldset.question legend,
-.eyebrow {
+fieldset.question legend {
   color: var(--olive);
 }
 
@@ -2004,9 +2027,9 @@ fieldset.question legend,
   background: var(--ember-cta);
   color: var(--card);
   font-family: var(--font-body);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   vertical-align: middle;
 }
@@ -2462,15 +2485,15 @@ input[type="file"]:valid::file-selector-button {
   border-radius: var(--r-pill);
   background: var(--gold);
   color: var(--ink);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .book-card.primary {
   grid-template-columns: 84px minmax(0, 1fr);
-  padding: 1.4rem 1.3rem 1.15rem 1.7rem;
+  padding: 1.4rem 1.3rem 1.15rem;
   border: 2px solid var(--ember);
   box-shadow: var(--shadow-md);
 }
@@ -2495,16 +2518,16 @@ input[type="file"]:valid::file-selector-button {
 .stamp-finished {
   display: inline-grid;
   place-items: center;
-  width: 72px;
+  width: 82px;
   height: 40px;
   flex: none;
   border: 2px dashed var(--moss);
   border-radius: 8px;
   background: var(--pass-soft);
   color: var(--pass);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   transform: rotate(-5deg);
   box-shadow: inset 0 0 0 2px rgba(94, 111, 58, 0.12);
@@ -2517,15 +2540,14 @@ input[type="file"]:valid::file-selector-button {
 /* Quiz: a quiet count next to the title, and a thin sticky context bar. */
 .quiz-count {
   display: inline-block;
-  margin-left: 0.4rem;
-  padding: 0.08rem 0.5rem;
+  padding: 0.1rem 0.55rem;
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
   background: var(--paper);
   color: var(--muted);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   vertical-align: middle;
   text-transform: none;
 }
@@ -2542,7 +2564,6 @@ input[type="file"]:valid::file-selector-button {
   margin: 0.7rem 0 0.2rem;
   padding: 0.5rem 0.95rem;
   border: 1px solid var(--border);
-  border-left: 4px solid var(--ember-cta);
   border-radius: var(--r-md);
   background: var(--card);
   box-shadow: var(--shadow-sm);
@@ -2647,9 +2668,9 @@ fieldset.question,
   border-radius: var(--r-pill);
   color: var(--muted);
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -2678,7 +2699,7 @@ fieldset.question,
   }
 
   .book-card.primary {
-    padding: 1.2rem 1.1rem 1rem 1.5rem;
+    padding: 1.2rem 1.1rem 1rem;
   }
 }
 
@@ -2731,22 +2752,38 @@ fieldset.question,
   font-variant-numeric: tabular-nums;
 }
 
-/* The review queue is the job on this page, so it gets the weight: an ember
-   edge, a card, and exactly one filled Review button per draft. */
+/* The review queue is the job on this page: one ember bookmark notch under the
+   top edge, then weight from the card, its heading and its single filled
+   Review button. No 8px side bar. */
 .review-callout {
+  position: relative;
+  overflow: hidden;
   margin: 1.1rem 0 0;
-  padding: 1.05rem 1.25rem 1.1rem 1.45rem;
+  padding: 1.05rem 1.25rem 1.1rem;
   border: 1.5px solid var(--border-strong);
-  border-left: 8px solid var(--ember);
   border-radius: var(--r-xl);
   background: var(--card);
   box-shadow: var(--shadow-md);
 }
 
+.review-callout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 2rem;
+  width: 54px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--ember);
+}
+
 .review-callout.is-clear {
-  border-left-color: var(--moss);
   border-style: dashed;
   box-shadow: none;
+}
+
+.review-callout.is-clear::before {
+  background: var(--moss);
 }
 
 .callout-head {
@@ -2830,7 +2867,7 @@ fieldset.question,
 .parent-reader-card {
   display: flex;
   flex-direction: column;
-  padding: 1rem 1.1rem 0.9rem 1.5rem;
+  padding: 1rem 1.1rem 0.9rem 1.2rem;
 }
 
 .parent-reader-card:hover {
@@ -2926,7 +2963,7 @@ fieldset.question,
 
 .dq-label {
   color: var(--olive);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2999,7 +3036,7 @@ table.books-table td {
   margin: 0 0 0.6rem;
   padding-left: 0.4rem;
   color: var(--olive);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3023,7 +3060,7 @@ table.books-table td {
   gap: 0.55rem;
   width: 100%;
   height: auto;
-  min-height: 38px;
+  min-height: 44px;
   padding: 0.25rem 0.45rem;
   border: 1.5px solid transparent;
   border-radius: var(--r-md);
@@ -3053,7 +3090,9 @@ table.books-table td {
 }
 
 .rail-decision {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   margin-top: 0.6rem;
   padding: 0.55rem 0.45rem 0.1rem;
   border-top: 1.5px dashed var(--border);
@@ -3245,9 +3284,9 @@ table.books-table td {
 
   .question-nav.rail-list a {
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    min-height: 40px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
     border: 1.5px solid var(--border-strong);
     border-radius: 50%;
@@ -3295,7 +3334,7 @@ table.books-table td {
 
 @media (max-width: 760px) {
   .review-callout {
-    padding: 0.95rem 1rem 1rem 1.1rem;
+    padding: 0.95rem 1rem 1rem;
   }
 
   .draft-row {
@@ -3323,7 +3362,7 @@ table.books-table td {
   }
 
   .parent-reader-card {
-    padding: 0.9rem 1rem 0.85rem 1.4rem;
+    padding: 0.9rem 1rem 0.85rem 1.1rem;
   }
 }
 
