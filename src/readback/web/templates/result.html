@@ -14,11 +14,10 @@
       </div>
     </div>
     <div class="celebrate-copy">
-      <p class="eyebrow">
-        {{ "All done" if attempt['passed'] else "Good try" }}
+      <h1>
+        {% if attempt['passed'] %}You did it, {{ attempt['reader_name'] }}!{% else %}Almost there, {{ attempt['reader_name'] }}.{% endif %}
         <span class="badge {{ 'badge-pass' if attempt['passed'] else 'badge-fail' }}">{{ "Passed" if attempt['passed'] else "Try again" }}</span>
-      </p>
-      <h1>{% if attempt['passed'] %}You did it, {{ attempt['reader_name'] }}!{% else %}Almost there, {{ attempt['reader_name'] }}.{% endif %}</h1>
+      </h1>
       <p class="book"><strong>{{ attempt['book_title'] }}</strong>{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</p>
       <p class="score-line">{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
       <p class="points-summary">
@@ -43,7 +42,7 @@
     <div class="answer-list">
       {% for question in questions %}
         <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
-          <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Worth another look</span>{% endif %}</h3>
+          <h2>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Worth another look</span>{% endif %}</h2>
           <p class="prompt">{{ question.prompt }}</p>
           <p class="answer-line"><strong>Your answer</strong><br>{{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
           {% if not question.is_correct %}

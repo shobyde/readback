@@ -5,7 +5,6 @@
 
 <div class="page-head review-head">
   <div>
-    <p class="eyebrow">Draft review</p>
     <h1>{{ book.title if book else "Book " ~ quiz.book_id }}</h1>
     {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
   </div>
@@ -51,20 +50,21 @@
     {% for question in quiz.questions %}
       <section class="review-question" id="q-{{ loop.index }}">
         <div class="qhead">
-          <h2>Question {{ question.ordinal }}</h2>
+          <h2 id="q-heading-{{ question.id }}">Question {{ question.ordinal }}</h2>
           <span class="meta">#{{ question.ordinal }} of {{ quiz.questions|length }}</span>
         </div>
         <form id="edit-q-{{ question.id }}" method="post" action="{{ url_for('parent_question_edit', question_id=question.id) }}" class="edit-form">
           <label for="prompt-{{ question.id }}">Prompt</label>
           <textarea id="prompt-{{ question.id }}" name="prompt" rows="2" required>{{ question.prompt }}</textarea>
 
-          <p class="field-label">Choices <span class="hint">Fill the dot beside the correct answer.</span></p>
-          <div class="choice-grid">
+          <p class="field-label">Choices <span class="hint" id="choice-hint-{{ question.id }}">Fill the dot beside the correct answer.</span></p>
+          <div class="choice-grid" role="radiogroup" aria-labelledby="q-heading-{{ question.id }}" aria-describedby="choice-hint-{{ question.id }}">
             {% for index in choice_indexes %}
+              {% set choice_text = question.choices[index] if index < question.choices|length and question.choices[index] else "(no text yet)" %}
               <div class="choice-edit">
                 <label for="choice-{{ question.id }}-{{ index }}">Choice {{ index + 1 }}</label>
                 <div class="choice-row">
-                  <input type="radio" id="answer-{{ question.id }}-{{ index }}" name="answer_index" value="{{ index }}"{% if index == question.answer_index %} checked{% endif %}>
+                  <input type="radio" id="answer-{{ question.id }}-{{ index }}" name="answer_index" value="{{ index }}" aria-label="Choice {{ index + 1 }}: {{ choice_text }}{% if index == question.answer_index %} is the correct answer{% endif %}"{% if index == question.answer_index %} checked{% endif %}>
                   <input id="choice-{{ question.id }}-{{ index }}" type="text" name="choice_{{ index }}" value="{{ question.choices[index] if index < question.choices|length else '' }}" required>
                 </div>
               </div>
