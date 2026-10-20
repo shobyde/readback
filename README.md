@@ -10,7 +10,7 @@ It has two surfaces: a light, playful shelf for young readers, and a calmer
 grown-ups' corner for approving quizzes and managing the library.
 
 <p align="center">
-  <img src="docs/media/tour.gif" alt="A reader opens a quiz, answers five questions, submits, and sees a passing result" width="860">
+  <img src="docs/media/tour.gif" alt="A reader picks their name, opens a quiz, answers five questions, and sees a passing result" width="860">
 </p>
 
 Readback is not affiliated with Renaissance Learning or Accelerated Reader. It
@@ -26,6 +26,8 @@ content, and it never contacts Renaissance Learning services.
 - Scores attempts, awards a book's points once per reader, and exports the
   reading log as CSV.
 - Serves a small server-rendered web interface with no JavaScript required.
+- Gives readers a playful shelf and parents a calmer review queue, with tap-friendly
+  layouts down to phone widths.
 
 Readback does not include a language model. You point it at one you run or
 subscribe to, for example Ollama or LM Studio on the same machine.
@@ -33,15 +35,19 @@ subscribe to, for example Ollama or LM Studio on the same machine.
 ## What it looks like
 
 <p align="center">
-  <img src="docs/media/dashboard.png" alt="The family reading shelf with reader cards, points, and recent quiz results" width="860">
+  <img src="docs/media/dashboard.png" alt="The family reading shelf: each reader's card with points, books finished, and quizzes taken, above a recent quiz log" width="860">
 </p>
 
-| Taking a quiz | Parent review |
+| A reader's shelf | Taking a quiz |
 | --- | --- |
-| <img src="docs/media/quiz.png" alt="A five question quiz with lettered choices and a visible selection state" width="430"> | <img src="docs/media/review.png" alt="Parent review form with editable question, choices, and a radio picker for the correct answer" width="430"> |
+| <img src="docs/media/reader.png" alt="Maya's shelf with her points and quiz totals, an Up next book card, and the books she has finished" width="430"> | <img src="docs/media/quiz.png" alt="The first two questions of a five-question quiz, each with four lettered choices" width="430"> |
+
+| Parent area | Parent review |
+| --- | --- |
+| <img src="docs/media/parent.png" alt="The parent area with a draft waiting for review, family totals, and a management card for each reader" width="430"> | <img src="docs/media/review.png" alt="Reviewing a draft: a question rail beside an editable question with four choices and a picker for the correct answer" width="430"> |
 
 <p align="center">
-  <img src="docs/media/result.png" alt="A passed result with a score ring, points sticker, Nib the bookworm, and answer explanations" width="860">
+  <img src="docs/media/result.png" alt="A passed result card with a 100% score ring, a points-earned sticker, and Nib the bookworm" width="860">
 </p>
 
 ## Quick start

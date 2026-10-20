@@ -7,63 +7,78 @@
   <div>
     <p class="eyebrow">The shelf</p>
     <h1>Books</h1>
-    <p class="lede">Import your list, then ask the model for a draft quiz when you need one.</p>
+    <p class="lede">Import the family's book list, then generate a draft quiz for a title when a reader is ready for it.</p>
   </div>
 </div>
 
 <h2>Import a CSV</h2>
-<form method="post" action="{{ url_for('parent_books_import') }}" enctype="multipart/form-data" class="inline-form">
+<form method="post" action="{{ url_for('parent_books_import') }}" enctype="multipart/form-data" class="inline-form import-form">
   <label for="csv-file">CSV file</label>
   <input id="csv-file" type="file" name="csv" accept=".csv,text/csv" required>
   <button type="submit">Import books</button>
 </form>
-<p class="hint">Columns: title, author, isbn, points, grade_level, notes. Title is required.</p>
+<p class="hint file-hint"><span class="pick-empty">No file chosen yet.</span><span class="pick-ready">File ready — click Import books.</span><br>
+  Columns: title, author, isbn, points, grade_level, notes. Title is required.</p>
 
-<h2>Book list</h2>
+<div class="section-head">
+  <h2>Book list</h2>
+  {% if books %}<p class="hint">{{ books|length }} title{{ 's' if books|length != 1 else '' }}.</p>{% endif %}
+</div>
 {% if books %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Title</th>
-        <th scope="col">Author</th>
-        <th scope="col">ISBN</th>
-        <th scope="col" class="num">Points</th>
-        <th scope="col">Grade</th>
-        <th scope="col">Latest quiz</th>
-        <th scope="col">Generate</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for book in books %}
+  {% if default_questions %}
+    <div class="table-toolbar">
+      <p class="default-questions">
+        <span class="dq-label">Default</span>
+        <strong class="dq-value">{{ default_questions }}</strong>
+        <span class="dq-text">questions per quiz. Change a row's number to generate a different length.</span>
+      </p>
+    </div>
+  {% endif %}
+  <div class="table-wrap">
+    <table class="list books-table">
+      <thead>
         <tr>
-          <td class="wrap">{{ book.title }}</td>
-          <td>{{ book.author }}</td>
-          <td class="meta">{{ book.isbn or "" }}</td>
-          <td class="num">{{ "%.2f"|format(book.points) }}</td>
-          <td>{{ book.grade_level }}</td>
-          <td>
-            {% set status = latest.get(book.id) %}
-            {% if status == "approved" %}
-              <span class="badge badge-pass">Approved</span>
-            {% elif status == "draft" %}
-              <span class="badge badge-draft">Draft</span>
-            {% elif status %}
-              <span class="badge badge-neutral">{{ status|capitalize }}</span>
-            {% else %}
-              <span class="meta">none</span>
-            {% endif %}
-          </td>
-          <td>
-            <form method="post" action="{{ url_for('parent_books_generate', book_id=book.id) }}" class="inline-form">
-              <label class="sr-only" for="questions-{{ book.id }}">Questions</label>
-              <input id="questions-{{ book.id }}" type="number" name="num_questions" value="{{ default_questions }}" min="1" max="20">
-              <button type="submit" class="secondary">Generate</button>
-            </form>
-          </td>
+          <th scope="col">Title</th>
+          <th scope="col">Author</th>
+          <th scope="col">ISBN</th>
+          <th scope="col" class="num">Points</th>
+          <th scope="col">Grade</th>
+          <th scope="col">Latest quiz</th>
+          <th scope="col" class="action-col">Questions</th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for book in books %}
+          <tr>
+            <td class="wrap">{{ book.title }}</td>
+            <td>{{ book.author }}</td>
+            <td class="meta">{{ book.isbn or "" }}</td>
+            <td class="num">{{ "%.2f"|format(book.points) }}</td>
+            <td>{{ book.grade_level }}</td>
+            <td>
+              {% set status = latest.get(book.id) %}
+              {% if status == "approved" %}
+                <span class="badge badge-pass">Approved</span>
+              {% elif status == "draft" %}
+                <span class="badge badge-draft">Draft</span>
+              {% elif status %}
+                <span class="badge badge-neutral">{{ status|capitalize }}</span>
+              {% else %}
+                <span class="badge badge-none">Not generated</span>
+              {% endif %}
+            </td>
+            <td class="action-col">
+              <form method="post" action="{{ url_for('parent_books_generate', book_id=book.id) }}" class="inline-form generate-form">
+                <label class="sr-only" for="questions-{{ book.id }}">Questions for {{ book.title }}</label>
+                <input id="questions-{{ book.id }}" type="number" name="num_questions" value="{{ default_questions }}" min="1" max="20">
+                <button type="submit" class="secondary">Generate</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
   <p class="empty">No books yet. Import a CSV above.</p>
 {% endif %}

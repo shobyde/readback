@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Quiz: {{ book.title if book else "Book" }} · Readback{% endblock %}
 {% block content %}
+{% set total = quiz.questions|length %}
 <p class="crumbs"><a href="{{ url_for('dashboard') }}">Readers</a> / <a href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">{{ summary.name }}</a> / Quiz</p>
 
 <div class="quiz-head">
   <div>
-    <p class="eyebrow">Reading quiz</p>
+    <p class="eyebrow">Reading quiz <span class="quiz-count">{{ total }} question{{ 's' if total != 1 else '' }}</span></p>
     <h1>{{ book.title if book else "Book " ~ quiz.book_id }}</h1>
     {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
   </div>
@@ -15,17 +16,22 @@
   </p>
 </div>
 
+<div class="quiz-bar">
+  <span class="quiz-bar-book">{{ book.title if book else "Book " ~ quiz.book_id }}</span>
+  <span class="quiz-bar-step">Question 1 of {{ total }} <span class="quiz-bar-hint">· all on this page</span></span>
+</div>
+
 <form method="post" action="{{ url_for('quiz_submit', reader_id=summary.reader_id, quiz_id=quiz.id) }}" class="quiz-form">
   {% for question in quiz.questions %}
-    <fieldset class="question">
-      <legend>Question {{ loop.index }} of {{ quiz.questions|length }}</legend>
+    <fieldset class="question" id="question-{{ loop.index }}">
+      <legend>Question {{ loop.index }} of {{ total }}</legend>
       <div class="question-body">
         <p class="prompt">{{ question.prompt }}</p>
         {% for choice in question.choices %}
           <label class="choice">
             <input type="radio" name="q_{{ question.id }}" value="{{ loop.index0 }}">
             <span class="choice-letter">{{ "ABCD"[loop.index0] }}</span>
-            <span>{{ choice }}</span>
+            <span class="choice-text">{{ choice }}</span>
             <span class="choice-dot" aria-hidden="true"></span>
           </label>
         {% endfor %}

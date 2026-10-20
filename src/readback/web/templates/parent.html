@@ -3,46 +3,55 @@
 {% block content %}
 <div class="page-head">
   <div>
-    <p class="eyebrow">Grown-ups' corner</p>
-    <h1>Quizzes and readers</h1>
-    <p class="lede">Check the drafts, add a reader, and keep the shelf tidy.</p>
+    <p class="eyebrow">Parent area</p>
+    <h1>Review quizzes and manage the shelf</h1>
+    <p class="lede">Approve drafts before readers see them, add readers, and keep the book list and reading log current.</p>
   </div>
 </div>
 
-<ul class="counts">
+{# The review queue is the reason a parent opens this page, so it leads and the
+   counts below it read as context rather than as a row of controls. #}
+{% if drafts %}
+  <section class="review-callout" aria-labelledby="drafts-heading">
+    <div class="callout-head">
+      <div>
+        <h2 id="drafts-heading">Drafts to review</h2>
+        <p class="callout-lede">Open a draft, check every question, then approve it for the shelf.</p>
+      </div>
+      <span class="badge badge-draft">{{ counts['drafts'] }} waiting</span>
+    </div>
+    <ul class="draft-list">
+      {% for quiz in drafts %}
+        {% set book = books.get(quiz.book_id) %}
+        <li class="draft-row">
+          <div class="draft-info">
+            <p class="draft-title">{{ book.title if book else "Book " ~ quiz.book_id }}</p>
+            <p class="draft-meta">
+              <span>{{ quiz.questions|length }} question{{ 's' if quiz.questions|length != 1 else '' }}</span>
+              <span>drafted {{ quiz.created_at|short_date }}</span>
+            </p>
+          </div>
+          <a class="button draft-review" href="{{ url_for('parent_quiz', quiz_id=quiz.id) }}">Review</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% else %}
+  <section class="review-callout is-clear" aria-labelledby="drafts-heading">
+    <div>
+      <h2 id="drafts-heading">Drafts to review</h2>
+      <p class="callout-lede">Nothing waiting. Generate a draft from the <a href="{{ url_for('parent_books') }}">book list</a> when a reader is ready for a quiz.</p>
+    </div>
+  </section>
+{% endif %}
+
+<ul class="counts" aria-label="Library at a glance">
   <li><strong>{{ counts['readers'] }}</strong> readers</li>
   <li><strong>{{ counts['books'] }}</strong> books</li>
   <li><strong>{{ counts['drafts'] }}</strong> draft{{ 's' if counts['drafts'] != 1 else '' }} to review</li>
   <li><strong>{{ counts['approved'] }}</strong> approved quizzes</li>
   <li><strong>{{ counts['attempts'] }}</strong> quizzes taken</li>
 </ul>
-
-<h2>Drafts to review</h2>
-{% if drafts %}
-  <table class="list">
-    <thead>
-      <tr>
-        <th scope="col">Book</th>
-        <th scope="col">Questions</th>
-        <th scope="col">Created</th>
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for quiz in drafts %}
-        {% set book = books.get(quiz.book_id) %}
-        <tr>
-          <td class="wrap">{{ book.title if book else "Book " ~ quiz.book_id }}</td>
-          <td>{{ quiz.questions|length }}</td>
-          <td class="meta">{{ quiz.created_at|short_date }}</td>
-          <td><a class="button" href="{{ url_for('parent_quiz', quiz_id=quiz.id) }}">Review</a></td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p class="empty">Nothing waiting. Generate a quiz from the <a href="{{ url_for('parent_books') }}">book list</a>.</p>
-{% endif %}
 
 <h2>Readers</h2>
 <form method="post" action="{{ url_for('parent_create_reader') }}" class="inline-form">
@@ -54,18 +63,31 @@
 {% if summaries %}
   <div class="reader-grid parent-readers">
     {% for summary in summaries %}
-      <a class="reader-card" href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">
+      <article class="reader-card parent-reader-card">
         <div class="top">
           <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
           <h2>{{ summary.name }}</h2>
-          <span class="points">{{ summary.points_total|points }} pts</span>
         </div>
-        <p class="sub">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} finished · {{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</p>
-      </a>
+        <div class="parent-reader-foot">
+          <p class="parent-reader-meta">
+            {% if summary.books_passed == 0 and summary.points_total == 0 and summary.attempts == 0 %}
+              No activity yet
+            {% else %}
+              <span>{{ summary.points_total|points }} points</span>
+              <span>{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }}</span>
+              <span>{{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }}</span>
+            {% endif %}
+          </p>
+          <a class="parent-reader-open" href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">
+            View shelf
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+      </article>
     {% endfor %}
   </div>
 {% else %}
-  <p class="empty">No readers yet.</p>
+  <p class="empty">No readers yet. Add the first name above.</p>
 {% endif %}
 
 <h2>Books and export</h2>

@@ -16,45 +16,64 @@
   <img class="hero-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="">
 </section>
 
-<h2>Next up</h2>
+<h2 id="next-up">Next up</h2>
 {% if next_quizzes %}
+  <p class="hint">One quiz at a time. Take your time and enjoy the story.</p>
   <div class="quiz-grid">
     {% for quiz in next_quizzes %}
       {% set book = books.get(quiz.book_id) %}
-      <article class="book-card">
+      <article class="book-card{{ ' primary' if loop.first }}">
         <span class="mini-cover" aria-hidden="true">{{ (book.title if book else "B")[:1]|upper }}</span>
         <div class="book-info">
+          {% if loop.first %}<span class="card-flag">Up next</span>{% endif %}
           <h3>{{ book.title if book else "Book " ~ quiz.book_id }}</h3>
-          <p class="byline">{{ book.author if book else "" }}</p>
+          {% if book and book.author %}<p class="byline">by {{ book.author }}</p>{% endif %}
+          <p class="book-points">{{ (book.points if book else 0)|points }} pts when you pass</p>
         </div>
         <div class="foot">
-          <span class="points-tag">{{ (book.points if book else 0)|points }} pts</span>
-          <a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">Take quiz</a>
+          <a class="button" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=quiz.id) }}">
+            Take quiz
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
         </div>
       </article>
     {% endfor %}
   </div>
 {% else %}
-  <p class="empty">Every book on the shelf is finished. Ask a grown-up to add another one.</p>
+  <p class="empty empty-inline">
+    <span>{% if books %}Every book on this shelf is finished. That is a lot of reading.{% else %}No books on the shelf yet. A grown-up can add the first one.{% endif %}</span>
+    <a class="button" href="{{ url_for('parent_index') }}">Ask a grown-up for a new book</a>
+  </p>
 {% endif %}
 
-<h2>Books you finished</h2>
+<h2 id="finished">Books you finished</h2>
 {% if passed %}
   <ul class="finished-list">
     {% for item in passed %}
       <li>
-        <span class="check" aria-hidden="true">✓</span>
-        <span class="book-title">{{ item.title }}</span>
-        <span class="meta">by {{ item.author }}</span>
-        <span class="points-tag">{{ item.points|points }} pts</span>
-        <time class="when">{{ item.created_at|short_date }}</time>
-        {% if item.quiz_id %}
-          <a class="button secondary" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=item.quiz_id) }}">Read again</a>
-        {% endif %}
+        <span class="stamp-finished" aria-hidden="true">Finished</span>
+        <div class="finished-main">
+          <span class="book-title">{{ item.title }}</span>
+          <span class="meta">by {{ item.author }}</span>
+        </div>
+        <div class="finished-meta">
+          <span class="points-tag">{{ item.points|points }} pts</span>
+          <time class="when">{{ item.created_at|short_date }}</time>
+          {% if item.quiz_id %}
+            <a class="button secondary" href="{{ url_for('quiz_form', reader_id=summary.reader_id, quiz_id=item.quiz_id) }}">Take it again</a>
+          {% endif %}
+        </div>
       </li>
     {% endfor %}
   </ul>
 {% else %}
-  <p class="empty">Nothing here yet. Your first finished book will land on this shelf.</p>
+  <p class="empty empty-inline">
+    <span>Nothing here yet. Your first finished book lands on this shelf.</span>
+    {% if next_quizzes %}
+      <a class="button" href="#next-up">See what's next</a>
+    {% else %}
+      <a class="button" href="{{ url_for('parent_index') }}">Ask a grown-up for a book</a>
+    {% endif %}
+  </p>
 {% endif %}
 {% endblock %}

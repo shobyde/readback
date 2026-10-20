@@ -13,36 +13,47 @@
         <span>score</span>
       </div>
     </div>
-    <div>
+    <div class="celebrate-copy">
       <p class="eyebrow">
         {{ "All done" if attempt['passed'] else "Good try" }}
         <span class="badge {{ 'badge-pass' if attempt['passed'] else 'badge-fail' }}">{{ "Passed" if attempt['passed'] else "Try again" }}</span>
       </p>
       <h1>{% if attempt['passed'] %}You did it, {{ attempt['reader_name'] }}!{% else %}Almost there, {{ attempt['reader_name'] }}.{% endif %}</h1>
       <p class="book"><strong>{{ attempt['book_title'] }}</strong>{% if attempt['book_author'] %} by {{ attempt['book_author'] }}{% endif %}</p>
-      <p>{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
-      <span class="sticker-points">{% if points_awarded %}🎉 {% endif %}+{{ points_awarded|points }} points</span>
-      <p class="points-line">Points earned {{ "%.2f"|format(points_awarded) }} · Points total {{ "%.2f"|format(summary.points_total) }}</p>
+      <p class="score-line">{{ attempt['correct_answers'] }} of {{ attempt['total_questions'] }} questions correct</p>
+      <p class="points-summary">
+        {% if points_awarded %}
+          <span class="sticker-points">+{{ points_awarded|points }} points</span>
+        {% endif %}
+        <span class="points-now">You now have {{ summary.points_total|points }} points</span>
+      </p>
+      <p class="sr-only">Points earned {{ "%.2f"|format(points_awarded) }} · Points total {{ "%.2f"|format(summary.points_total) }}</p>
       <div class="result-actions">
         <a class="button" href="{{ url_for('reader_home', reader_id=attempt['reader_id']) }}">Back to my shelf</a>
-        <a class="button secondary" href="{{ url_for('dashboard') }}">See all readers</a>
       </div>
     </div>
-    <img class="celebrate-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="Nib celebrating">
+    <div class="celebrate-art">
+      <span class="starburst" aria-hidden="true"></span>
+      <img class="celebrate-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="Nib celebrating">
+    </div>
   </section>
 
-  <h2>Let's look at the answers</h2>
-  {% for question in questions %}
-    <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
-      <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Worth another look</span>{% endif %}</h3>
-      <p class="prompt">{{ question.prompt }}</p>
-      <p class="answer-line"><strong>Your answer</strong><br>{{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
-      {% if not question.is_correct %}
-        <p class="answer-line"><strong>Correct answer</strong><br>{{ question.correct_text }}</p>
-      {% endif %}
-      {% if question.explanation %}<p class="explanation">{{ question.explanation }}</p>{% endif %}
-    </section>
-  {% endfor %}
+  <details class="answer-review"{% if not attempt['passed'] %} open{% endif %}>
+    <summary>Review your answers</summary>
+    <div class="answer-list">
+      {% for question in questions %}
+        <section class="review-question {{ 'correct' if question.is_correct else 'incorrect' }}">
+          <h3>Question {{ loop.index }}{% if question.is_correct %} <span class="pass-note">· Correct</span>{% else %} <span class="fail-note">· Worth another look</span>{% endif %}</h3>
+          <p class="prompt">{{ question.prompt }}</p>
+          <p class="answer-line"><strong>Your answer</strong><br>{{ question.chosen_text if question.chosen_text else "(no answer)" }}</p>
+          {% if not question.is_correct %}
+            <p class="answer-line"><strong>Correct answer</strong><br>{{ question.correct_text }}</p>
+          {% endif %}
+          {% if question.explanation %}<p class="explanation">{{ question.explanation }}</p>{% endif %}
+        </section>
+      {% endfor %}
+    </div>
+  </details>
 {% else %}
   <p class="empty">This quiz attempt was not submitted.</p>
 {% endif %}

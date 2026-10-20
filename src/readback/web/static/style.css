@@ -11,6 +11,12 @@
   --card-blue: #e3edf2;
   --ember: #c9561f;
   --ember-dark: #a84414;
+  /* Filled controls carry white text: #fff8ea on #a8430f is 5.72:1 (AA).
+     Keep --ember for borders, dots and other non-text accents. */
+  --ember-cta: #a8430f;
+  --ember-cta-hover: #8f370b;
+  /* Every focus ring paints on parchment, so it needs its own dark ember. */
+  --focus-ring: #a8430f;
   --gold: #f2a63a;
   --moss: #5e6f3a;
   --sage: #8fa76a;
@@ -18,7 +24,9 @@
   --leather: #7a4a28;
   --bark: #4b2f1f;
   --ink: #2a2219;
-  --muted: #6d5b46;
+  /* Small print (meta, hints, crumbs, byline, points): >= 6:1 on card and
+     parchment, still warm brown rather than grey. */
+  --muted: #5f4e3b;
   --border: rgba(122, 74, 40, 0.18);
   --border-strong: rgba(122, 74, 40, 0.34);
   --fail: #8a3b2e;
@@ -44,6 +52,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Keep in-page anchors clear of the 78px sticky header. */
+  scroll-padding-top: 96px;
 }
 
 body {
@@ -123,8 +133,10 @@ body {
 .site-nav a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
-  padding: 0.42rem 1rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
   border-radius: var(--r-pill);
   color: var(--bark);
   font-size: 0.92rem;
@@ -142,9 +154,9 @@ body {
 }
 
 .site-nav a.active {
-  background: var(--ember);
+  background: var(--ember-cta);
   color: var(--card);
-  box-shadow: 0 3px 8px rgba(226, 106, 40, 0.28);
+  box-shadow: 0 3px 8px rgba(143, 55, 11, 0.28);
 }
 
 body.parent .nav-lock {
@@ -218,12 +230,14 @@ a:hover {
   color: var(--ember-dark);
 }
 
+/* A ring dark enough to read on parchment, card and warm card alike. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
-  outline: 3px solid rgba(226, 106, 40, 0.45);
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -482,9 +496,29 @@ textarea:focus-visible {
 }
 
 .reader-card .sub {
-  margin: 0.65rem 0 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.15rem;
+  margin: 0.65rem 0 0;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+}
+
+.reader-card .stat {
+  white-space: nowrap;
+}
+
+/* Points are information on the card, not a control: plain weighted text. */
+.reader-card .sub strong {
+  color: var(--bark);
+  font-weight: 800;
+}
+
+/* The whole card is the control, so the ring wraps the whole card. */
+.reader-card:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-md);
 }
 
 .meter {
@@ -598,6 +632,57 @@ table.list .num {
   text-align: right;
 }
 
+/* Tables scroll sideways inside their own box; the page never does. */
+.table-wrap {
+  position: relative;
+  max-width: 100%;
+  margin: 1rem 0 1.6rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--r-lg);
+}
+
+.table-wrap table.list {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  /* A scrolling book table keeps titles on one line; the wrapper scrolls. */
+  .table-wrap table.list td.wrap {
+    white-space: nowrap;
+  }
+}
+
+/* Books table: keep the question count and Generate on one line. */
+table.list .inline-form {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+table.list .inline-form input[type="number"] {
+  flex: 0 0 3.9rem;
+  width: 3.9rem;
+  min-width: 0;
+  padding: 0.4rem 0.35rem;
+  text-align: center;
+}
+
+table.list .inline-form button {
+  margin-top: 0;
+  min-height: 44px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+}
+
+/* A compact 48-64px row rhythm for action tables. */
+table.list td {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
 /* ------------------------------ badges ------------------------------- */
 
 .badge {
@@ -627,6 +712,14 @@ table.list .num {
 .badge-neutral {
   background: var(--card-warm);
   color: var(--muted);
+}
+
+/* "Nothing here yet", not an error: a quiet dashed outline in the badge row. */
+.badge-none {
+  border: 1px dashed var(--border-strong);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 /* ------------------------------ buttons ------------------------------ */
@@ -673,18 +766,18 @@ button,
   padding: 0.58rem 1.15rem;
   border: 1px solid transparent;
   border-radius: var(--r-md);
-  background: var(--ember);
+  background: var(--ember-cta);
   color: var(--card);
   font: inherit;
   font-weight: 800;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 4px 10px rgba(226, 106, 40, 0.22);
+  box-shadow: 0 4px 10px rgba(143, 55, 11, 0.22);
 }
 
 button:hover,
 .button:hover {
-  background: var(--ember-dark);
+  background: var(--ember-cta-hover);
   color: var(--card);
 }
 
@@ -735,6 +828,31 @@ button.danger:hover {
 
 .inline-form button {
   margin-top: 0;
+}
+
+/* Add-reader form: a compact field + button group, not a full-width row. */
+form.inline-form:has(#reader-name) {
+  align-items: flex-end;
+  gap: 0.5rem 0.6rem;
+  max-width: 34rem;
+  margin: 1rem 0 1.5rem;
+}
+
+form.inline-form:has(#reader-name) label {
+  flex: 0 0 100%;
+  margin-bottom: 0.1rem;
+}
+
+form.inline-form:has(#reader-name) input[type="text"] {
+  flex: 0 1 22rem;
+  width: 22rem;
+  min-width: 0;
+  max-width: 22rem;
+  min-height: 44px;
+}
+
+form.inline-form:has(#reader-name) button {
+  min-height: 44px;
 }
 
 .sr-only {
@@ -963,10 +1081,12 @@ fieldset.question legend + * {
 
 label.choice {
   display: flex;
+  position: relative;
   align-items: center;
   gap: 0.7rem;
+  min-height: 48px;
   margin: 0.5rem 0;
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 0.8rem;
   border: 1.5px solid var(--border);
   border-radius: var(--r-md);
   background: #fffdf6;
@@ -986,6 +1106,11 @@ label.choice input[type="radio"] {
   opacity: 0;
   width: 1px;
   height: 1px;
+}
+
+.choice-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .choice-letter {
@@ -1025,13 +1150,15 @@ label.choice:has(input:checked) .choice-dot {
 
 label.choice:has(input:checked) .choice-letter {
   border-color: var(--ember);
-  background: var(--ember);
+  background: var(--ember-cta);
   color: var(--card);
 }
 
-label.choice:focus-within {
-  outline: 3px solid rgba(226, 106, 40, 0.4);
-  outline-offset: 2px;
+/* Keyboard focus lives on the whole row: the radio itself is visually hidden. */
+label.choice:has(input:focus-visible) {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+  border-color: var(--ember-cta);
 }
 
 .quiz-actions {
@@ -1060,7 +1187,7 @@ label.choice:focus-within {
 
 .celebrate {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 140px;
+  grid-template-columns: 150px minmax(0, 1fr) 170px;
   gap: 1.5rem 1.8rem;
   position: relative;
   margin: 1.2rem 0 1.6rem;
@@ -1315,8 +1442,8 @@ label.choice:focus-within {
 }
 
 .question-nav a:hover {
-  border-color: var(--ember);
-  color: var(--ember);
+  border-color: var(--ember-cta);
+  color: var(--ember-cta);
 }
 
 .review-question .qhead {
@@ -1394,10 +1521,58 @@ label.choice:focus-within {
   background: var(--card);
 }
 
-.decision-grid {
+.decision-card h2 {
+  margin-top: 0;
+}
+
+/* One decision block: approve on the left, the send-back controls beside it. */
+.decision-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 0 1.75rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 1rem 1.5rem;
+  margin-top: 0.4rem;
+}
+
+.decision-actions form {
+  margin: 0;
+}
+
+.decision-actions p {
+  margin-top: 0;
+}
+
+.decision-approve {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+}
+
+.decision-reject {
+  padding: 0.85rem 1rem 1rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+}
+
+.decision-reject label {
+  margin: 0 0 0.25rem;
+}
+
+.decision-reject input[type="text"] {
+  max-width: 100%;
+}
+
+/* The two Approve buttons are the same control, wherever they sit. */
+.approve-button {
+  min-height: 44px;
+  padding: 0.68rem 1.4rem;
+  font-size: 1rem;
+}
+
+.review-status .approve-button {
+  margin-top: 0;
 }
 
 .links {
@@ -1428,8 +1603,11 @@ label.choice:focus-within {
 
 .card-foot {
   display: flex;
-  align-items: center;
-  gap: 0.7rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
 }
 
 .card-foot .meter {
@@ -1437,10 +1615,27 @@ label.choice:focus-within {
 }
 
 .card-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin-left: auto;
   color: var(--leather);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.card-open .chevron,
+.button .chevron {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  transition: transform 160ms var(--ease-cozy);
+}
+
+.reader-card:hover .card-open .chevron,
+.button:hover .chevron {
+  transform: translateX(2px);
 }
 
 .reader-card .avatar {
@@ -1493,13 +1688,15 @@ label.choice:focus-within {
 
 .book-card {
   display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
-  column-gap: 0.85rem;
+  grid-template-columns: 72px minmax(0, 1fr);
+  column-gap: 0.95rem;
   align-items: start;
 }
 
 .book-card .foot {
   grid-column: 1 / -1;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
 }
 
 .mini-cover {
@@ -1507,27 +1704,27 @@ label.choice:focus-within {
   overflow: hidden;
   display: grid;
   place-items: center;
-  width: 54px;
-  height: 70px;
-  border-radius: 4px 10px 10px 4px;
+  width: 72px;
+  height: 92px;
+  border-radius: 5px 13px 13px 5px;
   background: var(--spine, var(--ember));
   color: #fffdf6;
   font-family: var(--font-head);
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 700;
-  box-shadow: inset 5px 0 0 rgba(42, 34, 25, 0.18);
+  box-shadow: inset 6px 0 0 rgba(42, 34, 25, 0.18);
 }
 
 .mini-cover::after {
   content: "";
   position: absolute;
-  left: 9px;
-  right: 9px;
-  bottom: 11px;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
   height: 2px;
   border-radius: 2px;
   background: rgba(255, 253, 246, 0.55);
-  box-shadow: 0 -5px 0 rgba(255, 253, 246, 0.35);
+  box-shadow: 0 -6px 0 rgba(255, 253, 246, 0.35);
 }
 
 .book-info {
@@ -1538,8 +1735,13 @@ label.choice:focus-within {
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  height: 20px;
-  flex: 1;
+  height: 22px;
+  flex: 0 1 auto;
+  max-width: 140px;
+  min-width: 42px;
+  /* The books stand on a shelf, so the strip reads as spines, not chips. */
+  padding: 0 2px 3px;
+  border-bottom: 2px solid rgba(122, 74, 40, 0.3);
 }
 
 .spine-strip span {
@@ -1566,17 +1768,46 @@ label.choice:focus-within {
 }
 
 .celebrate-nib {
-  width: 140px;
+  position: relative;
+  z-index: 1;
+  width: 132px;
   height: auto;
-  justify-self: center;
   transform: rotate(4deg);
 }
 
 .finished-list li {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 7rem 4.5rem 5.5rem auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.5rem 0.7rem;
+  gap: 0.35rem 0.9rem;
+  min-width: 0;
+}
+
+.finished-list .finished-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.finished-list .finished-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem 0.75rem;
+  min-width: 0;
+}
+
+.finished-list .finished-meta .when {
+  margin-left: 0;
+}
+
+.finished-list .book-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .finished-list .button {
@@ -1617,22 +1848,57 @@ label.choice:focus-within {
   font-size: 0.82rem;
 }
 
-.celebrate::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(circle at 62% 18%, var(--gold) 3px, transparent 3.5px),
-    radial-gradient(circle at 78% 72%, var(--ember) 2.5px, transparent 3px),
-    radial-gradient(circle at 55% 84%, var(--sage) 2.5px, transparent 3px),
-    radial-gradient(circle at 88% 34%, var(--sage) 2px, transparent 2.5px),
-    radial-gradient(circle at 70% 48%, var(--gold) 2px, transparent 2.5px);
-  opacity: 0.55;
+/* One crafted mark, not scattered confetti: a starburst medallion sits
+   behind Nib, painted with conic rays and a dashed gold ring. */
+.celebrate-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  width: 170px;
+  height: 170px;
 }
 
-.celebrate.missed::after {
-  opacity: 0.25;
+.celebrate-art::before {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 2px dashed rgba(168, 67, 15, 0.32);
+  background: var(--card-warm);
+  box-shadow: 0 0 0 10px rgba(242, 166, 58, 0.14);
+}
+
+.starburst {
+  position: absolute;
+  inset: -2%;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    var(--gold) 0deg 6deg,
+    transparent 6deg 18deg
+  );
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 0 48%, transparent 74%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 0 48%, transparent 74%);
+  opacity: 0.45;
+  transform: rotate(-8deg);
+  animation: starburst-in 700ms var(--ease-cozy) both;
+}
+
+.celebrate.missed .starburst {
+  opacity: 0.2;
+}
+
+@keyframes starburst-in {
+  from {
+    transform: scale(0.82) rotate(-16deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-8deg);
+    opacity: 0.45;
+  }
 }
 
 .review-status {
@@ -1695,6 +1961,272 @@ fieldset.question legend,
 }
 
 
+/* ------------------- UI-2: contrast, focus, affordances -------------- */
+
+/* Skip link: first focusable element on the page, hidden until tabbed to. */
+.skip-link {
+  position: absolute;
+  top: -4rem;
+  left: 1rem;
+  z-index: 60;
+  padding: 0.8rem 1.2rem;
+  border-radius: var(--r-md);
+  background: var(--ember-cta);
+  color: var(--card);
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transition: top 140ms var(--ease-cozy);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 0.75rem;
+  color: var(--card);
+}
+
+/* Review: the question reached from the nav gets a ring and a heading mark. */
+.review-question:target {
+  border-color: var(--ember-cta);
+  box-shadow: 0 0 0 3px rgba(168, 67, 15, 0.22), var(--shadow-md);
+  scroll-margin-top: 108px;
+}
+
+.review-question:target h2 {
+  color: var(--ember-dark);
+}
+
+.review-question:target h2::after {
+  content: "viewing";
+  margin-left: 0.55rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--ember-cta);
+  color: var(--card);
+  font-family: var(--font-body);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* The nav circle that points at the current question lights up too. */
+.quiz-review:has(#q-1:target) .question-nav a[href="#q-1"],
+.quiz-review:has(#q-2:target) .question-nav a[href="#q-2"],
+.quiz-review:has(#q-3:target) .question-nav a[href="#q-3"],
+.quiz-review:has(#q-4:target) .question-nav a[href="#q-4"],
+.quiz-review:has(#q-5:target) .question-nav a[href="#q-5"],
+.quiz-review:has(#q-6:target) .question-nav a[href="#q-6"],
+.quiz-review:has(#q-7:target) .question-nav a[href="#q-7"],
+.quiz-review:has(#q-8:target) .question-nav a[href="#q-8"],
+.quiz-review:has(#q-9:target) .question-nav a[href="#q-9"],
+.quiz-review:has(#q-10:target) .question-nav a[href="#q-10"],
+.quiz-review:has(#q-11:target) .question-nav a[href="#q-11"],
+.quiz-review:has(#q-12:target) .question-nav a[href="#q-12"],
+.quiz-review:has(#q-13:target) .question-nav a[href="#q-13"],
+.quiz-review:has(#q-14:target) .question-nav a[href="#q-14"],
+.quiz-review:has(#q-15:target) .question-nav a[href="#q-15"],
+.quiz-review:has(#q-16:target) .question-nav a[href="#q-16"],
+.quiz-review:has(#q-17:target) .question-nav a[href="#q-17"],
+.quiz-review:has(#q-18:target) .question-nav a[href="#q-18"],
+.quiz-review:has(#q-19:target) .question-nav a[href="#q-19"],
+.quiz-review:has(#q-20:target) .question-nav a[href="#q-20"] {
+  border-color: var(--ember-cta);
+  background: var(--ember-cta);
+  color: var(--card);
+  box-shadow: 0 0 0 3px rgba(168, 67, 15, 0.22);
+}
+
+/* Review choice dots: ring the row that holds the focused radio. */
+.choice-row:has(input[type="radio"]:focus-visible) {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Per-question actions: Save and Delete share one right-aligned row. */
+.q-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  padding-top: 0.85rem;
+  border-top: 1.5px dashed var(--border);
+}
+
+.q-actions > button {
+  margin: 0;
+}
+
+.q-actions form {
+  margin: 0;
+}
+
+/* Delete hides behind a native disclosure, so a stray click cannot remove it. */
+.q-actions .delete-form {
+  width: fit-content;
+  margin: 0;
+}
+
+.confirm-delete {
+  width: fit-content;
+}
+
+.confirm-delete > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: fit-content;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0.58rem 1.15rem;
+  border: 1.5px solid var(--fail);
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--fail);
+  font: inherit;
+  font-weight: 800;
+  list-style: none;
+  cursor: pointer;
+}
+
+.confirm-delete > summary::-webkit-details-marker {
+  display: none;
+}
+
+.confirm-delete > summary:hover {
+  background: var(--fail-soft);
+}
+
+.confirm-delete[open] {
+  width: 100%;
+}
+
+.confirm-panel {
+  margin: 0.55rem 0 0 auto;
+  max-width: 26rem;
+  padding: 0.8rem 0.95rem 0.9rem;
+  border: 1.5px solid var(--fail);
+  border-radius: var(--r-md);
+  background: var(--fail-soft);
+}
+
+.confirm-panel p {
+  margin: 0 0 0.55rem;
+  color: var(--bark);
+  font-size: 0.92rem;
+}
+
+.confirm-panel button {
+  margin-top: 0;
+}
+
+/* CSV import: a dashed picker that reports empty vs chosen without JS. */
+.import-form {
+  align-items: flex-end;
+}
+
+input[type="file"] {
+  width: 100%;
+  max-width: 32rem;
+  min-height: 52px;
+  padding: 0.5rem 0.65rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--card);
+  color: var(--bark);
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+
+input[type="file"]:hover {
+  border-color: var(--ember-cta);
+  background: var(--card-warm);
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 0.85rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--ember-cta);
+  border-radius: var(--r-sm);
+  background: var(--ember-cta);
+  color: var(--card);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: var(--ember-cta-hover);
+}
+
+/* `required` + a chosen file = :valid: the picker turns solid and green. */
+input[type="file"]:valid {
+  border-style: solid;
+  border-color: var(--pass);
+  background: var(--pass-soft);
+  color: var(--bark);
+}
+
+input[type="file"]:valid::file-selector-button {
+  border-color: var(--pass);
+  background: var(--pass);
+  color: var(--card);
+}
+
+.import-form button[type="submit"] {
+  border: 1.5px solid var(--moss);
+  background: var(--card);
+  color: var(--moss);
+  box-shadow: none;
+}
+
+.import-form:has(input[type="file"]:valid) button[type="submit"] {
+  border-color: var(--ember-cta);
+  background: var(--ember-cta);
+  color: var(--card);
+  box-shadow: 0 4px 10px rgba(143, 55, 11, 0.22);
+}
+
+.import-form + .file-hint {
+  margin-top: 0.45rem;
+}
+
+.file-hint .pick-ready {
+  display: none;
+}
+
+.import-form:has(input[type="file"]:valid) + .file-hint .pick-empty {
+  display: none;
+}
+
+.import-form:has(input[type="file"]:valid) + .file-hint .pick-ready {
+  display: inline;
+  color: var(--pass);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .decision-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .q-actions .delete-form,
+  .confirm-delete {
+    width: 100%;
+  }
+
+  .confirm-panel {
+    max-width: 100%;
+  }
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
@@ -1736,8 +2268,15 @@ fieldset.question legend,
     justify-items: start;
   }
 
+  .celebrate-art {
+    justify-self: end;
+    width: 132px;
+    height: 132px;
+    margin-top: 0.4rem;
+  }
+
   .celebrate-nib {
-    display: none;
+    width: 104px;
   }
 
   .review-question .choice-grid {
@@ -1747,6 +2286,115 @@ fieldset.question legend,
   table.list {
     display: block;
     overflow-x: auto;
+  }
+
+  /* A wrapped table scrolls in its wrapper, not twice on itself. */
+  .table-wrap table.list {
+    display: table;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  button,
+  .button {
+    min-height: 44px;
+  }
+
+  .book-card .foot .button {
+    min-height: 44px;
+  }
+
+  label.choice {
+    min-height: 48px;
+  }
+
+  /* Finished rows become two rows: stamp + title/author, then the meta line. */
+  .finished-list li {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    row-gap: 0.45rem;
+  }
+
+  .finished-list .stamp-finished {
+    grid-row: 1;
+    grid-column: 1;
+    margin-top: 0.05rem;
+  }
+
+  .finished-list .finished-main {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .finished-list .finished-meta {
+    grid-row: 2;
+    grid-column: 2;
+    justify-content: flex-start;
+    gap: 0.4rem 0.7rem;
+  }
+
+  .finished-list .book-title,
+  .finished-list .meta {
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+  }
+
+  .finished-list .button {
+    min-height: 44px;
+  }
+
+  /* Recently-read rows stack into two tidy lines instead of clipping. */
+  .log li {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.3rem 0.6rem;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .log li .log-reader {
+    grid-row: 1;
+    grid-column: 1;
+  }
+
+  .log li .badge {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .log li .points-earned {
+    grid-row: 1;
+    grid-column: 3;
+  }
+
+  .log li .log-book {
+    grid-row: 2;
+    grid-column: 1 / 3;
+  }
+
+  .log li .when {
+    grid-row: 2;
+    grid-column: 3;
+    align-self: center;
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  form.inline-form:has(#reader-name) {
+    max-width: none;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  form.inline-form:has(#reader-name) input[type="text"] {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  form.inline-form:has(#reader-name) button {
+    align-self: flex-start;
   }
 }
 
@@ -1767,5 +2415,946 @@ fieldset.question legend,
 
   .quiz-actions button {
     min-width: 100%;
+  }
+}
+
+/* ------------------- UI-3: kid surface craft ------------------------- */
+
+/* Empty states stay warm and always offer a way forward. */
+.empty-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+}
+
+.empty-inline .button {
+  flex: none;
+  margin-top: 0;
+}
+
+/* "Next up": the first unpassed book leads, the rest follow in the grid. */
+.quiz-grid {
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+}
+
+.book-card .book-points {
+  margin: 0.4rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.book-card .foot {
+  padding-top: 0.9rem;
+}
+
+.book-card .foot .button {
+  margin-top: 0;
+  min-height: 44px;
+}
+
+.card-flag {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--ink);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.book-card.primary {
+  grid-template-columns: 84px minmax(0, 1fr);
+  padding: 1.4rem 1.3rem 1.15rem 1.7rem;
+  border: 2px solid var(--ember);
+  box-shadow: var(--shadow-md);
+}
+
+.book-card.primary h3 {
+  font-size: 1.32rem;
+}
+
+.book-card.primary .mini-cover {
+  width: 84px;
+  height: 108px;
+  font-size: 2.4rem;
+}
+
+.book-card.primary .foot .button {
+  width: 100%;
+  min-height: 48px;
+  font-size: 0.98rem;
+}
+
+/* A finished book is an achievement: a hand-stamped "Finished" sticker. */
+.stamp-finished {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 40px;
+  flex: none;
+  border: 2px dashed var(--moss);
+  border-radius: 8px;
+  background: var(--pass-soft);
+  color: var(--pass);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transform: rotate(-5deg);
+  box-shadow: inset 0 0 0 2px rgba(94, 111, 58, 0.12);
+}
+
+.finished-list li:nth-child(even) .stamp-finished {
+  transform: rotate(4deg);
+}
+
+/* Quiz: a quiet count next to the title, and a thin sticky context bar. */
+.quiz-count {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.08rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  text-transform: none;
+}
+
+.quiz-bar {
+  position: sticky;
+  top: 84px;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.1rem 1rem;
+  margin: 0.7rem 0 0.2rem;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--ember-cta);
+  border-radius: var(--r-md);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.quiz-bar-book {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--bark);
+  font-family: var(--font-head);
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quiz-bar-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.quiz-bar-step::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ember);
+}
+
+/* Anchor jumps and the submit row clear the sticky bar and header. */
+fieldset.question,
+.quiz-actions {
+  scroll-margin-top: 152px;
+}
+
+/* Result: one points line, a crafted medallion, one primary action. */
+.score-line {
+  margin: 0.55rem 0 0;
+}
+
+.points-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.9rem;
+  margin: 0.85rem 0 0;
+}
+
+.points-summary .sticker-points {
+  margin-top: 0;
+}
+
+.points-now {
+  color: var(--bark);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.result-actions .button {
+  min-height: 48px;
+  padding: 0.7rem 1.4rem;
+}
+
+/* Answer review is a native disclosure: closed on a pass, open on a retry. */
+.answer-review {
+  margin: 1.3rem 0 1.6rem;
+  padding: 0.2rem 1.15rem 1rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-xl);
+  background: var(--card);
+}
+
+.answer-review > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 56px;
+  padding: 0.55rem 0.1rem;
+  color: var(--bark);
+  font-family: var(--font-head);
+  font-size: 1.22rem;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.answer-review > summary::-webkit-details-marker {
+  display: none;
+}
+
+.answer-review > summary::after {
+  content: "Show";
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.answer-review[open] > summary {
+  border-bottom: 1.5px dashed var(--border);
+  margin-bottom: 0.35rem;
+}
+
+.answer-review[open] > summary::after {
+  content: "Hide";
+}
+
+.answer-review .review-question:first-child {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 760px) {
+  .quiz-bar {
+    top: 0;
+    margin-top: 0.65rem;
+  }
+
+  fieldset.question,
+  .quiz-actions {
+    scroll-margin-top: 70px;
+  }
+
+  .book-card.primary {
+    padding: 1.2rem 1.1rem 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .quiz-bar-hint {
+    display: none;
+  }
+
+  .quiz-bar-book {
+    max-width: 100%;
+  }
+}
+
+/* ------------------- UI-4: parent surface craft ----------------------- */
+
+/* Counts are context for one visit, not controls: plain numbers on a rule,
+   so nobody tries to click a chip. */
+.counts {
+  gap: 0;
+  margin: 1rem 0 1.8rem;
+  padding: 0.55rem 0;
+  border-top: 1.5px dashed var(--border);
+  border-bottom: 1.5px dashed var(--border);
+}
+
+.counts li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  padding: 0.05rem 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.counts li + li {
+  margin-left: 0.85rem;
+  padding-left: 0.85rem;
+  border-left: 1px solid var(--border);
+}
+
+.counts strong {
+  margin-right: 0;
+  color: var(--bark);
+  font-size: 1.12rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The review queue is the job on this page, so it gets the weight: an ember
+   edge, a card, and exactly one filled Review button per draft. */
+.review-callout {
+  margin: 1.1rem 0 0;
+  padding: 1.05rem 1.25rem 1.1rem 1.45rem;
+  border: 1.5px solid var(--border-strong);
+  border-left: 8px solid var(--ember);
+  border-radius: var(--r-xl);
+  background: var(--card);
+  box-shadow: var(--shadow-md);
+}
+
+.review-callout.is-clear {
+  border-left-color: var(--moss);
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.callout-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+}
+
+.review-callout h2 {
+  margin: 0 0 0.15rem;
+  font-size: 1.32rem;
+}
+
+.callout-lede {
+  margin: 0.1rem 0 0;
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.callout-head .badge {
+  flex: none;
+  margin-top: 0.25rem;
+}
+
+.draft-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.95rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.draft-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  padding: 0.6rem 0.7rem 0.6rem 1rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+}
+
+.draft-title {
+  margin: 0;
+  color: var(--bark);
+  font-family: var(--font-head);
+  font-size: 1.06rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.draft-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.75rem;
+  margin: 0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.draft-review {
+  flex: none;
+  margin-top: 0;
+  min-height: 44px;
+  padding: 0.5rem 1.3rem;
+}
+
+/* Parent reader cards: a management row, not a whole-card link that mirrors
+   the kid dashboard. The card stays still; "View shelf" is the one control. */
+.parent-readers {
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+}
+
+.parent-reader-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 1.1rem 0.9rem 1.5rem;
+}
+
+.parent-reader-card:hover {
+  transform: none;
+  box-shadow: var(--shadow-sm);
+}
+
+.parent-reader-card .top {
+  margin-bottom: 0.75rem;
+}
+
+.parent-reader-card .avatar {
+  width: 42px;
+  height: 42px;
+  font-size: 1.14rem;
+}
+
+/* The stats line and the shelf link sit in the same place on every card: the
+   foot is pushed to the bottom, so a zero reader lines up with a busy one. */
+.parent-reader-foot {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  border-top: 1.5px dashed var(--border);
+}
+
+.parent-reader-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.55rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.parent-reader-meta span + span::before {
+  content: "/";
+  margin-right: 0.55rem;
+  color: var(--border-strong);
+  font-weight: 700;
+}
+
+.parent-reader-open {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  width: fit-content;
+  min-height: 44px;
+  margin: 0.1rem 0 -0.45rem auto;
+  padding: 0.2rem 0.1rem;
+  color: var(--leather);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.parent-reader-open .chevron {
+  width: 15px;
+  height: 15px;
+  transition: transform 160ms var(--ease-cozy);
+}
+
+.parent-reader-open:hover {
+  color: var(--ember-dark);
+  text-decoration: underline;
+}
+
+.parent-reader-open:hover .chevron {
+  transform: translateX(2px);
+}
+
+/* Books: one default stated once, then one compact line per row. */
+.table-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1rem;
+  margin: 0.9rem 0 0;
+}
+
+.default-questions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.15rem 0.45rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.dq-label {
+  color: var(--olive);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dq-value {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.1rem;
+  padding: 0.1rem 0.45rem;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--bark);
+  font-family: var(--font-head);
+  font-size: 0.98rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.books-table th,
+.books-table td {
+  padding: 0.42rem 0.7rem;
+}
+
+/* `table.list td` above outranks a bare class selector, so match its shape. */
+table.books-table td {
+  padding-top: 0.24rem;
+  padding-bottom: 0.24rem;
+}
+
+.books-table td.wrap {
+  max-width: 24rem;
+  overflow-wrap: anywhere;
+}
+
+.books-table .action-col {
+  text-align: left;
+}
+
+.books-table .generate-form {
+  justify-content: flex-start;
+}
+
+.books-table .generate-form input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Review: a sticky question rail beside the cards above 1024px. */
+.review-layout {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1.6rem;
+  margin: 1.2rem 0 0;
+}
+
+.review-rail {
+  position: sticky;
+  top: 6.4rem;
+  align-self: start;
+  max-height: calc(100vh - 8.5rem);
+  overflow-y: auto;
+  padding: 0.9rem 0.85rem 0.75rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--card);
+}
+
+.rail-title {
+  margin: 0 0 0.6rem;
+  padding-left: 0.4rem;
+  color: var(--olive);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.question-nav.rail-list {
+  display: grid;
+  gap: 0.12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.question-nav.rail-list li {
+  margin: 0;
+}
+
+.question-nav.rail-list a {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  height: auto;
+  min-height: 38px;
+  padding: 0.25rem 0.45rem;
+  border: 1.5px solid transparent;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--bark);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.rail-num {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.question-nav.rail-list a:hover {
+  border-color: var(--border-strong);
+  background: var(--paper);
+  color: var(--bark);
+}
+
+.rail-decision {
+  display: block;
+  margin-top: 0.6rem;
+  padding: 0.55rem 0.45rem 0.1rem;
+  border-top: 1.5px dashed var(--border);
+  color: var(--leather);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.rail-decision:hover {
+  text-decoration: underline;
+}
+
+.review-main {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.review-main .review-question {
+  margin: 0;
+  scroll-margin-top: 108px;
+}
+
+/* `:target` is the only state a no-JS page has: light the rail entry and its
+   number for whichever question the hash points at. */
+.review-layout:has(#q-1:target) .rail-list a[href="#q-1"],
+.review-layout:has(#q-2:target) .rail-list a[href="#q-2"],
+.review-layout:has(#q-3:target) .rail-list a[href="#q-3"],
+.review-layout:has(#q-4:target) .rail-list a[href="#q-4"],
+.review-layout:has(#q-5:target) .rail-list a[href="#q-5"],
+.review-layout:has(#q-6:target) .rail-list a[href="#q-6"],
+.review-layout:has(#q-7:target) .rail-list a[href="#q-7"],
+.review-layout:has(#q-8:target) .rail-list a[href="#q-8"],
+.review-layout:has(#q-9:target) .rail-list a[href="#q-9"],
+.review-layout:has(#q-10:target) .rail-list a[href="#q-10"],
+.review-layout:has(#q-11:target) .rail-list a[href="#q-11"],
+.review-layout:has(#q-12:target) .rail-list a[href="#q-12"],
+.review-layout:has(#q-13:target) .rail-list a[href="#q-13"],
+.review-layout:has(#q-14:target) .rail-list a[href="#q-14"],
+.review-layout:has(#q-15:target) .rail-list a[href="#q-15"],
+.review-layout:has(#q-16:target) .rail-list a[href="#q-16"],
+.review-layout:has(#q-17:target) .rail-list a[href="#q-17"],
+.review-layout:has(#q-18:target) .rail-list a[href="#q-18"],
+.review-layout:has(#q-19:target) .rail-list a[href="#q-19"],
+.review-layout:has(#q-20:target) .rail-list a[href="#q-20"] {
+  border-color: var(--ember-cta);
+  background: var(--card-warm);
+  color: var(--ember-dark);
+}
+
+.review-layout:has(#q-1:target) .rail-list a[href="#q-1"] .rail-num,
+.review-layout:has(#q-2:target) .rail-list a[href="#q-2"] .rail-num,
+.review-layout:has(#q-3:target) .rail-list a[href="#q-3"] .rail-num,
+.review-layout:has(#q-4:target) .rail-list a[href="#q-4"] .rail-num,
+.review-layout:has(#q-5:target) .rail-list a[href="#q-5"] .rail-num,
+.review-layout:has(#q-6:target) .rail-list a[href="#q-6"] .rail-num,
+.review-layout:has(#q-7:target) .rail-list a[href="#q-7"] .rail-num,
+.review-layout:has(#q-8:target) .rail-list a[href="#q-8"] .rail-num,
+.review-layout:has(#q-9:target) .rail-list a[href="#q-9"] .rail-num,
+.review-layout:has(#q-10:target) .rail-list a[href="#q-10"] .rail-num,
+.review-layout:has(#q-11:target) .rail-list a[href="#q-11"] .rail-num,
+.review-layout:has(#q-12:target) .rail-list a[href="#q-12"] .rail-num,
+.review-layout:has(#q-13:target) .rail-list a[href="#q-13"] .rail-num,
+.review-layout:has(#q-14:target) .rail-list a[href="#q-14"] .rail-num,
+.review-layout:has(#q-15:target) .rail-list a[href="#q-15"] .rail-num,
+.review-layout:has(#q-16:target) .rail-list a[href="#q-16"] .rail-num,
+.review-layout:has(#q-17:target) .rail-list a[href="#q-17"] .rail-num,
+.review-layout:has(#q-18:target) .rail-list a[href="#q-18"] .rail-num,
+.review-layout:has(#q-19:target) .rail-list a[href="#q-19"] .rail-num,
+.review-layout:has(#q-20:target) .rail-list a[href="#q-20"] .rail-num {
+  border-color: var(--ember-cta);
+  background: var(--ember-cta);
+  color: var(--card);
+  box-shadow: 0 0 0 3px rgba(168, 67, 15, 0.16);
+}
+
+/* The note states the two verbs once, next to the page they act on. */
+.review-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem 1rem;
+}
+
+.note-jump {
+  flex: none;
+  color: var(--leather);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* One decision block: primary Approve, then the send-back controls. */
+.decision-lede {
+  max-width: 46rem;
+  margin: 0.1rem 0 0.9rem;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.decision-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem 1.5rem;
+}
+
+.decision-approve {
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.decision-approve .approve-button {
+  min-height: 52px;
+  padding: 0.8rem 1.6rem;
+  font-size: 1.02rem;
+}
+
+.decision-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* Reject stays in the same row as Approve: a dashed divider instead of a
+   nested box, so the pair reads as one decision rather than two panels. */
+.decision-reject {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+  padding: 0 0 0 1.5rem;
+  border: 0;
+  border-left: 1.5px dashed var(--border-strong);
+  border-radius: 0;
+  background: none;
+}
+
+.decision-reject label {
+  margin: 0 0 0.1rem;
+}
+
+.decision-reject input[type="text"] {
+  width: 100%;
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.decision-reject button {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 0.4rem;
+}
+
+/* The decision closes the question column, so it lines up with the cards. */
+@media (min-width: 1025px) {
+  .decision-card {
+    margin-left: calc(13rem + 1.6rem);
+  }
+}
+
+/* Under 1025px the rail folds back into the number row it replaced. */
+@media (max-width: 1024px) {
+  .review-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .review-rail {
+    position: static;
+    max-height: none;
+    overflow: visible;
+    padding: 0.5rem 0.55rem;
+    border: 0;
+    background: none;
+  }
+
+  .rail-title,
+  .rail-decision,
+  .rail-text {
+    display: none;
+  }
+
+  .question-nav.rail-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .question-nav.rail-list a {
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    border: 1.5px solid var(--border-strong);
+    border-radius: 50%;
+    background: var(--card);
+  }
+
+  .rail-num {
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    font-size: 0.92rem;
+    font-weight: 800;
+  }
+
+  .review-layout:has(#q-1:target) .rail-list a[href="#q-1"],
+  .review-layout:has(#q-2:target) .rail-list a[href="#q-2"],
+  .review-layout:has(#q-3:target) .rail-list a[href="#q-3"],
+  .review-layout:has(#q-4:target) .rail-list a[href="#q-4"],
+  .review-layout:has(#q-5:target) .rail-list a[href="#q-5"],
+  .review-layout:has(#q-6:target) .rail-list a[href="#q-6"],
+  .review-layout:has(#q-7:target) .rail-list a[href="#q-7"],
+  .review-layout:has(#q-8:target) .rail-list a[href="#q-8"],
+  .review-layout:has(#q-9:target) .rail-list a[href="#q-9"],
+  .review-layout:has(#q-10:target) .rail-list a[href="#q-10"],
+  .review-layout:has(#q-11:target) .rail-list a[href="#q-11"],
+  .review-layout:has(#q-12:target) .rail-list a[href="#q-12"],
+  .review-layout:has(#q-13:target) .rail-list a[href="#q-13"],
+  .review-layout:has(#q-14:target) .rail-list a[href="#q-14"],
+  .review-layout:has(#q-15:target) .rail-list a[href="#q-15"],
+  .review-layout:has(#q-16:target) .rail-list a[href="#q-16"],
+  .review-layout:has(#q-17:target) .rail-list a[href="#q-17"],
+  .review-layout:has(#q-18:target) .rail-list a[href="#q-18"],
+  .review-layout:has(#q-19:target) .rail-list a[href="#q-19"],
+  .review-layout:has(#q-20:target) .rail-list a[href="#q-20"] {
+    border-color: var(--ember-cta);
+    background: var(--ember-cta);
+    color: var(--card);
+  }
+
+  .rail-num {
+    color: inherit;
+  }
+}
+
+@media (max-width: 760px) {
+  .review-callout {
+    padding: 0.95rem 1rem 1rem 1.1rem;
+  }
+
+  .draft-row {
+    align-items: flex-start;
+  }
+
+  .draft-review {
+    margin-left: auto;
+  }
+
+  .decision-actions {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .decision-reject {
+    margin-top: 0.3rem;
+    padding: 0.85rem 0 0;
+    border-left: 0;
+    border-top: 1.5px dashed var(--border-strong);
+  }
+
+  .decision-approve .approve-button {
+    width: 100%;
+  }
+
+  .parent-reader-card {
+    padding: 0.9rem 1rem 0.85rem 1.4rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .counts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 0;
+  }
+
+  .counts li {
+    font-size: 0.8rem;
+  }
+
+  .counts li + li {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .counts li:nth-child(even) {
+    justify-content: flex-end;
+  }
+
+  .draft-review {
+    min-height: 44px;
+    padding: 0.45rem 1rem;
+  }
+
+  .books-table .generate-form input[type="number"] {
+    flex: 0 0 3.4rem;
+    width: 3.4rem;
   }
 }

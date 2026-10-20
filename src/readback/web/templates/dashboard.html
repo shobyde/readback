@@ -13,7 +13,10 @@
         <li><strong>{{ summaries|sum(attribute='points_total')|points }}</strong> points</li>
       </ul>
     {% else %}
-      <p class="empty">No readers yet. Add one in the <a href="{{ url_for('parent_index') }}">parent area</a>.</p>
+      <p class="empty empty-inline">
+        <span>No readers yet. A grown-up can add the first name.</span>
+        <a class="button" href="{{ url_for('parent_index') }}">Add a reader</a>
+      </p>
     {% endif %}
   </div>
   <div class="hero-art">
@@ -32,21 +35,34 @@
         <div class="top">
           <span class="avatar" aria-hidden="true">{{ summary.name[:1]|upper }}</span>
           <h2>{{ summary.name }}</h2>
-          <span class="points">{% if summary.books_passed == 0 and summary.points_total == 0 %}New reader{% else %}{{ summary.points_total|points }} pts{% endif %}</span>
         </div>
-        <p class="sub">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} finished · {{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</p>
+        <p class="sub">
+          {% if summary.books_passed == 0 and summary.points_total == 0 %}
+            A brand-new shelf with room for a first book.
+          {% else %}
+            <span class="stat"><strong>{{ summary.points_total|points }} pts</strong></span>
+            <span class="stat">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} finished</span>
+            <span class="stat">{{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</span>
+          {% endif %}
+        </p>
         <div class="card-foot">
           <span class="spine-strip" aria-hidden="true">
             {% for i in range(summary.books_passed) %}<span></span>{% endfor %}
           </span>
-          <span class="card-open">{{ "Start reading →" if summary.books_passed == 0 else "Open shelf →" }}</span>
+          <span class="card-open">
+            Open shelf
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </span>
         </div>
       </a>
     {% endfor %}
   </div>
 {% endif %}
 
-<h2>Recently read</h2>
+<div class="section-head">
+  <h2>Recently read</h2>
+  {% if attempts %}<p class="hint">The last few quizzes on every shelf.</p>{% endif %}
+</div>
 {% if attempts %}
   <ul class="log">
     {% for attempt in attempts %}
@@ -66,6 +82,6 @@
     {% endfor %}
   </ul>
 {% else %}
-  <p class="empty">No quizzes taken yet. Pick a reader to begin.</p>
+  <p class="empty">No quizzes taken yet. Pick a reader above and the first one will show up here.</p>
 {% endif %}
 {% endblock %}
