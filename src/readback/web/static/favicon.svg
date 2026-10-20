@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="Readback">
+  <title>Readback</title>
+  <!-- Brand bookmark: leather tile, cream ribbon, ember heart. A ribbon reads
+       at 16px where the open-book mark's page outlines turn to mush. -->
+  <rect width="40" height="40" rx="9" fill="#7A4A28"/>
+  <path d="M12.5 7.5 H27.5 V35 L20 28.5 L12.5 35 Z" fill="#FFF8EA"/>
+  <path d="M20 16.5 c0 -3 4.5 -3 4.5 0 c0 2.25 -4.5 5.25 -4.5 5.25 c0 0 -4.5 -3 -4.5 -5.25 c0 -3 4.5 -3 4.5 0 z" fill="#E26A28"/>
+</svg>
