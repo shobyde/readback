@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Goals · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / Goals</p>
+
+<div class="page-head">
+  <div>
+    <h1>Reading goals</h1>
+    <p class="lede">A goal turns the point total into a finish line. Readers see progress on their shelf and a nudge after each quiz. Leave the box empty to clear a goal.</p>
+  </div>
+</div>
+
+{% if rows %}
+  <ul class="goal-list">
+    {% for row in rows %}
+      <li class="goal-row">
+        <div class="goal-row-head">
+          <span class="avatar" aria-hidden="true">{{ row.summary.name[:1]|upper }}</span>
+          <div>
+            <h2>{{ row.summary.name }}</h2>
+            <p class="goal-row-meta">
+              {{ row.summary.points_total|points }} points ·
+              {{ row.summary.books_passed }} book{{ 's' if row.summary.books_passed != 1 else '' }}
+              {% if row.goal %}· goal {{ row.goal.target|points }}{% endif %}
+            </p>
+          </div>
+        </div>
+
+        {% if row.progress.status != 'no_goal' %}
+          <div class="goal-bar" role="progressbar" aria-label="{{ row.summary.name }}'s goal progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ row.progress.percent|round(0)|int }}">
+            <span style="width: {{ row.progress.percent }}%"></span>
+          </div>
+          <p class="goal-copy">
+            {% if row.progress.status == 'complete' %}
+              Goal reached. Next milestone {{ row.progress.current|points }} points.
+            {% else %}
+              {{ row.progress.percent }}% · {{ row.progress.remaining|points }} points to go
+              {% if row.progress.next %}· next stop {{ row.progress.next|points }}{% endif %}
+            {% endif %}
+          </p>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('parent_goals_set') }}" class="inline-form goal-form">
+          <input type="hidden" name="reader_id" value="{{ row.summary.reader_id }}">
+          <label for="goal-{{ row.summary.reader_id }}">Points goal for {{ row.summary.name }}</label>
+          <input id="goal-{{ row.summary.reader_id }}" type="number" name="target" min="1" step="1" value="{{ row.goal.target|round(0)|int if row.goal else '' }}" placeholder="e.g. 100">
+          <button type="submit" class="secondary">Save goal</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h2>How the ladder works</h2>
+  <p class="hint">With no personal goal, readers climb the default milestones: {% for step in ladder %}{{ step|points }}{% if not loop.last %}, {% endif %}{% endfor %} points. A personal goal adds its own 25-point steps and a finish line at the target.</p>
+{% else %}
+  <p class="empty">No readers yet. Add one from the <a href="{{ url_for('parent_index') }}">parent area</a> first.</p>
+{% endif %}
+{% endblock %}

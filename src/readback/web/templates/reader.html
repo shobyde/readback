@@ -10,11 +10,44 @@
     <ul class="chips">
       <li class="chip"><strong>{{ summary.points_total|points }}</strong> points</li>
       <li class="chip"><strong>{{ summary.books_passed }}</strong> book{{ 's' if summary.books_passed != 1 else '' }} finished</li>
-      <li class="chip"><strong>{{ summary.attempts }}</strong> quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</li>
+      <li class="chip"><strong>{{ summary.quiz_attempts }}</strong> quiz{{ 'zes' if summary.quiz_attempts != 1 else '' }} taken</li>
     </ul>
   </div>
   <img class="hero-nib" src="{{ url_for('static', filename='nib.svg') }}" alt="">
 </section>
+
+{% if progress.status != 'no_goal' %}
+<section class="goal-card{{ ' complete' if progress.status == 'complete' }}">
+  <div class="goal-head">
+    <h2>Reading goal</h2>
+    <span class="goal-state">{{ 'Goal reached!' if progress.status == 'complete' else (progress.percent|round(0)|int) ~ '%' }}</span>
+  </div>
+  <div class="goal-bar" role="progressbar" aria-label="Progress toward your reading goal" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progress.percent|round(0)|int }}">
+    <span style="width: {{ progress.percent }}%"></span>
+  </div>
+  <p class="goal-copy">
+    {{ summary.points_total|points }} of {{ progress.goal|points }} points
+    {% if progress.next %}· next stop {{ progress.next|points }}{% endif %}
+    {% if progress.status == 'complete' %}· {{ progress.remaining|points }} to go is behind you{% endif %}
+  </p>
+</section>
+{% endif %}
+
+<h2 id="badges">Badges</h2>
+<ul class="badge-shelf">
+  {% for badge in badges %}
+    <li class="badge-card{{ ' earned' if badge.earned else ' locked' }}">
+      <span class="badge-icon" aria-hidden="true">{{ badge.icon }}</span>
+      <span class="badge-body">
+        <strong>{{ badge.name }}</strong>
+        <span class="badge-desc">{{ badge.description }}</span>
+      </span>
+      {% if not badge.earned %}
+        <span class="badge-count">{{ badge.progress|round(0)|int }}/{{ badge.target|round(0)|int }}</span>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
 
 <h2 id="next-up">Next up</h2>
 {% if next_quizzes %}
@@ -52,9 +85,13 @@
     {% for item in passed %}
       <li>
         <span class="stamp-finished" aria-hidden="true">Finished</span>
+        <span class="book-sticker" aria-hidden="true">{{ stickers[item.book_id].emoji if item.book_id in stickers else "📗" }}</span>
         <div class="finished-main">
           <span class="book-title">{{ item.title }}</span>
           <span class="meta">by {{ item.author }}</span>
+          {% if item.stars %}
+            <span class="stars" aria-label="{{ item.stars }} out of 3 stars">{{ '★' * item.stars }}{{ '☆' * (3 - item.stars) }}</span>
+          {% endif %}
         </div>
         <div class="finished-meta">
           <span class="points-tag">{{ item.points|points }} pts</span>
@@ -75,5 +112,19 @@
       <a class="button" href="{{ url_for('parent_index') }}">Ask a grown-up for a book</a>
     {% endif %}
   </p>
+{% endif %}
+
+{% if manual_books %}
+<h2 id="log">Read a book without a quiz?</h2>
+<p class="hint">Some books have no quiz. Log one you finished and its points land right away — once per book.</p>
+<form method="post" action="{{ url_for('reader_manual', reader_id=summary.reader_id) }}" class="inline-form manual-form">
+  <label for="manual-book">Book you finished</label>
+  <select id="manual-book" name="book_id" required>
+    {% for book in manual_books %}
+      <option value="{{ book.id }}">{{ book.title }}{% if book.author %} — {{ book.author }}{% endif %}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="secondary">Log it</button>
+</form>
 {% endif %}
 {% endblock %}

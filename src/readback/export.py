@@ -36,8 +36,8 @@ def export_reading_log_csv(
         "a.passed AS passed, COALESCE(l.points, 0.0) AS points_awarded "
         "FROM attempts a "
         "JOIN readers r ON r.id = a.reader_id "
-        "JOIN quizzes q ON q.id = a.quiz_id "
-        "JOIN books b ON b.id = q.book_id "
+        "LEFT JOIN quizzes q ON q.id = a.quiz_id "
+        "JOIN books b ON b.id = COALESCE(q.book_id, a.book_id) "
         "LEFT JOIN points_ledger l ON l.attempt_id = a.id "
         "WHERE a.submitted_at IS NOT NULL"
     )

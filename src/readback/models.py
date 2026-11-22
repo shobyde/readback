@@ -26,6 +26,36 @@ class Book:
     grade_level: str = ""
     notes: str = ""
     created_at: str = ""
+    quiz_no: int | None = None
+    book_level: float | None = None
+    interest_level: str = ""
+    summary: str = ""
+    source: str = "manual"
+
+
+@dataclass(frozen=True)
+class Goal:
+    """A reader's points target for a season (or any period they choose)."""
+
+    reader_id: int
+    target: float
+    period: str = "season"
+    created_at: str = ""
+    updated_at: str = ""
+
+
+@dataclass(frozen=True)
+class Badge:
+    """One milestone in the reader-facing badge catalog."""
+
+    id: str
+    name: str
+    description: str
+    icon: str
+    earned: bool
+    progress: float = 0.0
+    target: float = 1.0
+
 
 
 @dataclass(frozen=True)
@@ -100,13 +130,16 @@ class ReaderSummary:
     points_total: float = 0.0
     books_passed: int = 0
     attempts: int = 0
+    quiz_attempts: int = 0
 
 
 __all__ = [
     "AttemptResult",
+    "Badge",
     "Book",
     "GeneratedQuestion",
     "GeneratedQuiz",
+    "Goal",
     "ImportResult",
     "Question",
     "Quiz",

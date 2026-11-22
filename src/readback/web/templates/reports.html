@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Reports · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / Reports</p>
+
+<div class="page-head">
+  <div>
+    <h1>Reports</h1>
+    <p class="lede">Five weeks of points, average quiz scores, badge progress and the last few reading events for every reader. Badges are recalculated from history, so a corrected rule never leaves a stale trophy behind.</p>
+  </div>
+</div>
+
+{% if reports %}
+  <ul class="report-list">
+    {% for report in reports %}
+      <li class="report-card">
+        <header class="report-head">
+          <div class="report-identity">
+            <span class="avatar" aria-hidden="true">{{ report.name[:1]|upper }}</span>
+            <div>
+              <h2>{{ report.name }}</h2>
+              <p class="report-chips">
+                <span>{{ report.points|points }} points</span>
+                <span>{{ report.books_passed }} book{{ 's' if report.books_passed != 1 else '' }}</span>
+                <span>{{ report.quiz_attempts }} quiz{{ 'zes' if report.quiz_attempts != 1 else '' }}</span>
+                {% if report.avg_score is not none %}<span>{{ report.avg_score }}% average</span>{% endif %}
+              </p>
+            </div>
+          </div>
+          <a class="parent-reader-open" href="{{ url_for('reader_home', reader_id=report.reader_id) }}">
+            Open shelf
+            <svg class="chevron" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </a>
+        </header>
+
+        {% if report.goal_progress.status != 'no_goal' %}
+          <div class="goal-bar" role="progressbar" aria-label="{{ report.name }}'s goal progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ report.goal_progress.percent|round(0)|int }}">
+            <span style="width: {{ report.goal_progress.percent }}%"></span>
+          </div>
+          <p class="goal-copy">
+            {{ report.goal_progress.percent }}% of the {{ report.goal_progress.goal|points }}-point goal
+            {% if report.goal_progress.status != 'complete' %}· {{ report.goal_progress.remaining|points }} to go{% endif %}
+          </p>
+        {% else %}
+          <p class="goal-copy goal-copy-empty">No goal set yet — <a href="{{ url_for('parent_goals') }}">add one</a>.</p>
+        {% endif %}
+
+        <h3>Points by week</h3>
+        <ul class="week-bars">
+          {% for bucket in report.weekly %}
+            <li>
+              <span class="week-bar-wrap">
+                <span class="week-bar{{ ' is-zero' if not bucket.points else '' }}" style="height: {{ (bucket.points / report.weekly_max * 100)|round(0)|int }}%" title="{{ bucket.points|points }} points"></span>
+              </span>
+              <span class="week-value">{{ bucket.points|points }}</span>
+              <span class="week-label">{{ bucket.label }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <h3>Badges</h3>
+        <ul class="badge-shelf compact">
+          {% for badge in report.badges %}
+            <li class="badge-card{{ ' earned' if badge.earned else ' locked' }}">
+              <span class="badge-icon" aria-hidden="true">{{ badge.icon }}</span>
+              <span class="badge-body"><strong>{{ badge.name }}</strong></span>
+            </li>
+          {% endfor %}
+        </ul>
+
+        <h3>Recent reading</h3>
+        {% if report.recent %}
+          <ul class="report-recent">
+            {% for item in report.recent %}
+              <li>
+                <span class="report-recent-title">{{ item.title }}</span>
+                <span class="report-recent-meta">
+                  {% if item.kind == 'manual' %}
+                    logged · +{{ item.points_awarded|points }} pts
+                  {% else %}
+                    {{ ((item.score or 0) * 100)|round(0)|int }}% · {{ 'passed' if item.passed else 'try again' }}{% if item.points_awarded %} · +{{ item.points_awarded|points }} pts{% endif %}
+                  {% endif %}
+                  · {{ item.submitted_at|short_date }}
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="hint">No reading events yet.</p>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty">No readers yet. Add one from the <a href="{{ url_for('parent_index') }}">parent area</a>.</p>
+{% endif %}
+{% endblock %}

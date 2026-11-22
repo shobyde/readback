@@ -41,7 +41,7 @@
           {% else %}
             <span class="stat"><strong>{{ summary.points_total|points }} pts</strong></span>
             <span class="stat">{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }} finished</span>
-            <span class="stat">{{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }} taken</span>
+            <span class="stat">{{ summary.quiz_attempts }} quiz{{ 'zes' if summary.quiz_attempts != 1 else '' }} taken</span>
           {% endif %}
         </p>
         <div class="card-foot">
@@ -70,11 +70,19 @@
           <span class="mini-avatar" aria-hidden="true">{{ attempt.reader_name[:1]|upper }}</span>
           {{ attempt.reader_name }}
         </span>
-        <span class="log-book">
-          <a class="book-title" href="{{ url_for('attempt_result', attempt_id=attempt.attempt_id) }}">{{ attempt.book_title }}</a>
-          <span class="meta">{{ attempt.correct }} of {{ attempt.total }} right</span>
-        </span>
-        <span class="badge {{ 'badge-pass' if attempt.passed else 'badge-fail' }}">{{ "Passed" if attempt.passed else "Try again" }}</span>
+        {% if attempt.kind == 'manual' %}
+          <span class="log-book">
+            <span class="book-title">{{ attempt.book_title }}</span>
+            <span class="meta">logged without a quiz</span>
+          </span>
+          <span class="badge badge-pass">Logged</span>
+        {% else %}
+          <span class="log-book">
+            <a class="book-title" href="{{ url_for('attempt_result', attempt_id=attempt.attempt_id) }}">{{ attempt.book_title }}</a>
+            <span class="meta">{{ attempt.correct }} of {{ attempt.total }} right</span>
+          </span>
+          <span class="badge {{ 'badge-pass' if attempt.passed else 'badge-fail' }}">{{ "Passed" if attempt.passed else "Try again" }}</span>
+        {% endif %}
         <span class="points-earned">{% if attempt.points_awarded %}+{{ attempt.points_awarded|points }}{% else %}0{% endif %}</span>
         <time class="when">{{ attempt.submitted_at|short_date }}</time>
       </li>

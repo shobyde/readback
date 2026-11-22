@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}AR catalog · Readback{% endblock %}
+{% block content %}
+<p class="crumbs"><a href="{{ url_for('parent_index') }}">Parent area</a> / AR catalog</p>
+
+<div class="page-head">
+  <div>
+    <h1>Look a book up</h1>
+    <p class="lede">Search the Accelerated Reader catalog for a title. Readback copies the quiz number, book level, interest level and AR point value onto your shelf — the quiz questions are still generated locally and reviewed by you.</p>
+  </div>
+</div>
+
+<form method="get" action="{{ url_for('parent_ar') }}" class="inline-form search-form">
+  <label for="ar-query">Title, author, or quiz number</label>
+  <input id="ar-query" type="search" name="q" value="{{ query }}" placeholder="The Hunger Games" required>
+  <button type="submit">Search AR</button>
+</form>
+<p class="hint">Readback asks arbookfind.com directly. Nothing is stored until you add a book, and no quiz content is copied.</p>
+
+{% if error %}
+  <p class="callout callout-error">{{ error }}</p>
+{% endif %}
+
+{% if query and not error %}
+  <div class="section-head">
+    <h2>Results</h2>
+    <p class="hint">{{ results|length }} match{{ 'es' if results|length != 1 else '' }}{% if results|length == 20 %} (first 20){% endif %}.</p>
+  </div>
+  {% if results %}
+    <ul class="ar-results">
+      {% for entry in results %}
+        <li class="ar-result">
+          <div class="ar-result-main">
+            <p class="ar-title">{{ entry.title }}</p>
+            {% if entry.author %}<p class="ar-author">by {{ entry.author }}</p>{% endif %}
+            <p class="ar-meta">
+              {% if entry.quiz_no %}<span>Quiz {{ entry.quiz_no }}</span>{% endif %}
+              {% if entry.book_level %}<span>BL {{ entry.book_level }}</span>{% endif %}
+              {% if entry.interest_level %}<span>{{ entry.interest_level }}</span>{% endif %}
+              {% if entry.points %}<span>{{ entry.points|points }} pts</span>{% endif %}
+            </p>
+            {% if entry.summary %}<p class="ar-summary">{{ entry.summary }}</p>{% endif %}
+          </div>
+          <div class="ar-result-action">
+            {% if entry.quiz_no and entry.quiz_no in on_shelf %}
+              <span class="badge badge-pass">On the shelf</span>
+            {% else %}
+              <form method="post" action="{{ url_for('parent_ar_add') }}">
+                <input type="hidden" name="ar_id" value="{{ entry.ar_id }}">
+                <button type="submit" class="secondary">Add to shelf</button>
+              </form>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No catalog matches for “{{ query }}”. Try the author or a shorter title.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

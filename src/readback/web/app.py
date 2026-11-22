@@ -31,9 +31,9 @@ from flask import (
     url_for,
 )
 
-from .. import books as books_module
-from .. import points as points_module
-from .. import review as review_module
+from .. import arbookfind, books as books_module, points as points_module
+from .. import review as review_module, rewards
+from ..arbookfind import ArBookFindError
 from ..config import Settings, load_settings
 from ..db import connect, init_db, transaction
 from ..export import export_reading_log_csv
@@ -63,6 +63,16 @@ def generate_quiz(book, settings, *, num_questions: int = DEFAULT_QUESTIONS):
 def save_draft(conn, book_id, quiz, model, source_notes=""):
     """Persist a generated quiz as the book's draft."""
     return quiz_generate.save_draft(conn, book_id, quiz, model, source_notes)
+
+
+def search_ar(query: str):
+    """Look a title up in the AR BookFind catalog.  Tests patch this name."""
+    return arbookfind.search_ar_books(query)
+
+
+def fetch_ar(ar_id: int):
+    """Fetch one AR catalog entry.  Tests patch this name."""
+    return arbookfind.fetch_ar_book(ar_id)
 
 
 # --------------------------------------------------------------------------- #
@@ -178,19 +188,32 @@ def create_app(settings: Settings | None = None) -> Flask:
 
     def require_reader(db: sqlite3.Connection, reader_id: int):
         try:
-            return points_module.reader_summary(db, reader_id)
-        except ValueError:
+            summary = points_module.reader_summary(db, reader_id)
+        except ValueError as exc:
             abort(404)
+            raise exc
+        return summary
 
     def passed_books(db: sqlite3.Connection, reader_id: int) -> list[dict]:
         rows = db.execute(
             "SELECT b.id AS book_id, b.title, b.author, l.points, "
-            "l.created_at FROM points_ledger l "
+            "l.created_at, a.correct_answers, a.total_questions, a.kind "
+            "FROM points_ledger l "
             "JOIN books b ON b.id = l.book_id "
+            "JOIN attempts a ON a.id = l.attempt_id "
             "WHERE l.reader_id = ? ORDER BY l.created_at DESC, l.id DESC",
             (reader_id,),
         ).fetchall()
-        return [dict(row) for row in rows]
+        items: list[dict] = []
+        for row in rows:
+            item = dict(row)
+            item["stars"] = (
+                rewards.stars(item["correct_answers"], item["total_questions"])
+                if item["kind"] == "quiz"
+                else 0
+            )
+            items.append(item)
+        return items
 
     @app.get("/reader/<int:reader_id>")
     def reader_home(reader_id: int):
@@ -205,6 +228,16 @@ def create_app(settings: Settings | None = None) -> Flask:
             quiz = quiz_by_book.get(item["book_id"])
             item["quiz_id"] = quiz.id if quiz is not None else None
         next_quizzes = [quiz for quiz in quizzes if quiz.book_id not in passed_ids]
+        goal = rewards.get_goal(db, reader_id)
+        quizzed_book_ids = {
+            int(row["book_id"])
+            for row in db.execute("SELECT DISTINCT book_id FROM quizzes").fetchall()
+        }
+        manual_books = [
+            book
+            for book in books.values()
+            if book.id not in passed_ids and book.id not in quizzed_book_ids
+        ]
         return render_template(
             "reader.html",
             summary=summary,
@@ -212,6 +245,11 @@ def create_app(settings: Settings | None = None) -> Flask:
             books=books,
             passed=passed,
             passed_ids=passed_ids,
+            goal=goal,
+            progress=rewards.goal_progress(summary.points_total, goal),
+            badges=rewards.badges_for(db, reader_id),
+            stickers=rewards.stickers_for(db, passed_ids),
+            manual_books=manual_books,
         )
 
     def approved_quiz(db: sqlite3.Connection, quiz_id: int):
@@ -268,6 +306,23 @@ def create_app(settings: Settings | None = None) -> Flask:
         )
         return redirect(url_for("attempt_result", attempt_id=attempt_id))
 
+    @app.post("/reader/<int:reader_id>/manual")
+    def reader_manual(reader_id: int):
+        """Log a finished book that has no quiz, and award its points once."""
+        db = get_db()
+        require_reader(db, reader_id)
+        book_id = request.form.get("book_id", type=int)
+        if not book_id:
+            flash("Pick a book to log.", "error")
+            return redirect(url_for("reader_home", reader_id=reader_id))
+        try:
+            result = points_module.log_manual_read(db, reader_id, book_id)
+        except ValueError as exc:
+            flash(str(exc), "error")
+        else:
+            flash(f"Logged. +{result.points_awarded:g} points.", "success")
+        return redirect(url_for("reader_home", reader_id=reader_id))
+
     @app.get("/attempt/<int:attempt_id>")
     def attempt_result(attempt_id: int):
         db = get_db()
@@ -283,6 +338,7 @@ def create_app(settings: Settings | None = None) -> Flask:
         ).fetchone()
         if attempt is None:
             abort(404)
+            raise LookupError(f"attempt {attempt_id} not found")
 
         rows = db.execute(
             "SELECT q.id AS question_id, q.ordinal, q.prompt, q.choices_json, "
@@ -332,12 +388,24 @@ def create_app(settings: Settings | None = None) -> Flask:
             (attempt_id,),
         ).fetchone()
         points_awarded = float(ledger["points"]) if ledger is not None else 0.0
+        goal = rewards.get_goal(db, attempt["reader_id"])
         return render_template(
             "result.html",
             attempt=attempt,
             questions=questions,
             summary=summary,
             points_awarded=points_awarded,
+            stars=rewards.stars(
+                int(attempt["correct_answers"] or 0),
+                int(attempt["total_questions"] or 0),
+                pass_threshold=settings.pass_threshold,
+            ),
+            goal=goal,
+            progress=rewards.goal_progress(summary.points_total, goal),
+            sticker=rewards.stickers_for(db, [attempt["quiz_book_id"]]).get(
+                attempt["quiz_book_id"]
+            ),
+            badges=rewards.badges_for(db, attempt["reader_id"]),
         )
 
     # ------------------------------------------------------------------ #
@@ -483,7 +551,12 @@ def create_app(settings: Settings | None = None) -> Flask:
         ).fetchall()
         latest = {row["book_id"]: row["status"] for row in rows}
         return render_template(
-            "books.html", books=books, latest=latest, default_questions=DEFAULT_QUESTIONS
+            "books.html",
+            books=books,
+            latest=latest,
+            default_questions=DEFAULT_QUESTIONS,
+            stickers=rewards.stickers_for(db, [book.id for book in books]),
+            sticker_catalog=rewards.STICKERS,
         )
 
     @app.post("/parent/books/import")
@@ -576,6 +649,147 @@ def create_app(settings: Settings | None = None) -> Flask:
         return response
 
     # ------------------------------------------------------------------ #
+    # AR catalog
+    # ------------------------------------------------------------------ #
+
+    @app.get("/parent/ar")
+    def parent_ar():
+        db = get_db()
+        query = (request.args.get("q") or "").strip()
+        results, error = [], ""
+        if query:
+            try:
+                results = search_ar(query)[:20]
+            except ArBookFindError as exc:
+                error = str(exc)
+            except Exception as exc:  # noqa: BLE001 - a dead site must not 500
+                error = f"{type(exc).__name__}: {exc}"
+        on_shelf = {
+            int(row["quiz_no"])
+            for row in db.execute(
+                "SELECT quiz_no FROM books WHERE quiz_no IS NOT NULL"
+            ).fetchall()
+        }
+        return render_template(
+            "ar.html",
+            query=query,
+            results=results,
+            error=error,
+            on_shelf=on_shelf,
+        )
+
+    @app.post("/parent/ar/add")
+    def parent_ar_add():
+        db = get_db()
+        raw = (request.form.get("ar_id") or "").strip()
+        try:
+            ar_id = int(raw)
+        except (TypeError, ValueError):
+            flash("Pick a book from the search results first.", "error")
+            return redirect(url_for("parent_ar"))
+
+        try:
+            entry = fetch_ar(ar_id)
+            book_id = books_module.add_ar_book(db, entry)
+        except (ArBookFindError, ValueError) as exc:
+            flash(f"Could not add that book: {exc}", "error")
+            return redirect(url_for("parent_ar"))
+        except Exception as exc:  # noqa: BLE001 - surface, never 500
+            flash(f"Could not add that book: {type(exc).__name__}: {exc}", "error")
+            return redirect(url_for("parent_ar"))
+
+        points = f"{entry.points:g}" if entry.points else "0"
+        flash(
+            f"Added {entry.title} (AR quiz {entry.quiz_no or '—'}, {points} pts). "
+            f"Generate a quiz for it from the book list.",
+            "success",
+        )
+        return redirect(url_for("parent_books", highlight=book_id))
+
+    # ------------------------------------------------------------------ #
+    # Goals and reports
+    # ------------------------------------------------------------------ #
+
+    @app.get("/parent/goals")
+    def parent_goals():
+        db = get_db()
+        rows = []
+        for summary in points_module.all_summaries(db):
+            goal = rewards.get_goal(db, summary.reader_id)
+            rows.append(
+                {
+                    "summary": summary,
+                    "goal": goal,
+                    "progress": rewards.goal_progress(summary.points_total, goal),
+                }
+            )
+        return render_template(
+            "goals.html", rows=rows, ladder=rewards.DEFAULT_MILESTONES
+        )
+
+    @app.post("/parent/goals")
+    def parent_goals_set():
+        db = get_db()
+        reader_id = request.form.get("reader_id", type=int)
+        if not reader_id:
+            abort(404)
+        raw = (request.form.get("target") or "").strip()
+        try:
+            if raw in ("", "0"):
+                rewards.clear_goal(db, reader_id)
+                flash("Goal cleared.", "success")
+            else:
+                goal = rewards.set_goal(db, reader_id, float(raw))
+                flash(f"Goal set to {goal.target:g} points.", "success")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        return redirect(url_for("parent_goals"))
+
+    @app.get("/parent/reports")
+    def parent_reports():
+        db = get_db()
+        return render_template("reports.html", reports=rewards.report_stats(db))
+
+    # ------------------------------------------------------------------ #
+    # Book maintenance
+    # ------------------------------------------------------------------ #
+
+    @app.post("/parent/books/<int:book_id>/sticker")
+    def parent_books_sticker(book_id: int):
+        db = get_db()
+        book = books_module.get_book(db, book_id)
+        if book is None:
+            abort(404)
+            raise LookupError(f"book {book_id} not found")
+        emoji = (request.form.get("sticker") or "").strip()
+        label = (request.form.get("label") or "").strip()
+        try:
+            rewards.assign_sticker(db, book_id, emoji, label)
+        except ValueError as exc:
+            flash(str(exc), "error")
+        else:
+            flash(
+                "Sticker updated." if emoji else "Sticker cleared.",
+                "success",
+            )
+        return redirect(url_for("parent_books"))
+
+    @app.post("/parent/books/<int:book_id>/delete")
+    def parent_books_delete(book_id: int):
+        db = get_db()
+        book = books_module.get_book(db, book_id)
+        if book is None:
+            abort(404)
+            raise LookupError(f"book {book_id} not found")
+        if request.form.get("confirm") != "yes":
+            flash(f"Tick the confirmation box before removing {book.title}.", "error")
+            return redirect(url_for("parent_books"))
+        with transaction(db):
+            db.execute("DELETE FROM books WHERE id = ?", (book_id,))
+        flash(f"Removed {book.title} and its quizzes, attempts and points.", "success")
+        return redirect(url_for("parent_books"))
+
+    # ------------------------------------------------------------------ #
     # Health
     # ------------------------------------------------------------------ #
 
@@ -586,4 +800,4 @@ def create_app(settings: Settings | None = None) -> Flask:
     return app
 
 
-__all__ = ["create_app", "generate_quiz", "save_draft"]
+__all__ = ["create_app", "fetch_ar", "generate_quiz", "save_draft", "search_ar"]

@@ -69,12 +69,12 @@
         </div>
         <div class="parent-reader-foot">
           <p class="parent-reader-meta">
-            {% if summary.books_passed == 0 and summary.points_total == 0 and summary.attempts == 0 %}
+            {% if summary.books_passed == 0 and summary.points_total == 0 and summary.quiz_attempts == 0 %}
               No activity yet
             {% else %}
               <span>{{ summary.points_total|points }} points</span>
               <span>{{ summary.books_passed }} book{{ 's' if summary.books_passed != 1 else '' }}</span>
-              <span>{{ summary.attempts }} quiz{{ 'zes' if summary.attempts != 1 else '' }}</span>
+              <span>{{ summary.quiz_attempts }} quiz{{ 'zes' if summary.quiz_attempts != 1 else '' }}</span>
             {% endif %}
           </p>
           <a class="parent-reader-open" href="{{ url_for('reader_home', reader_id=summary.reader_id) }}">
@@ -89,9 +89,12 @@
   <p class="empty">No readers yet. Add the first name above.</p>
 {% endif %}
 
-<h2>Books and export</h2>
+<h2>Library and reports</h2>
 <ul class="links">
-  <li><a href="{{ url_for('parent_books') }}">Manage books and import a CSV</a></li>
+  <li><a href="{{ url_for('parent_books') }}">Manage books, stickers, and import a CSV</a></li>
+  <li><a href="{{ url_for('parent_ar') }}">Look a book up in the AR catalog</a></li>
+  <li><a href="{{ url_for('parent_goals') }}">Set reading goals</a></li>
+  <li><a href="{{ url_for('parent_reports') }}">Weekly reports and badges</a></li>
   <li><a href="{{ url_for('parent_export') }}">Download the reading log (CSV)</a></li>
 </ul>
 {% endblock %}

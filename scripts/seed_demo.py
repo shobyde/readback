@@ -19,7 +19,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from readback import books, db, points, review  # noqa: E402
+from readback import books, db, points, review, rewards  # noqa: E402
 from readback.models import GeneratedQuestion, GeneratedQuiz  # noqa: E402
 from readback.quiz.generate import save_draft  # noqa: E402
 
@@ -202,6 +202,19 @@ ATTEMPTS = [
     ("Elena", "The Lion, the Witch and the Wardrobe", 3, 6),
 ]
 
+# Sam reads without quizzes: the manual path, for books with no approved quiz.
+MANUAL_READS = [("Sam", "Holes", 1)]
+
+# A reader's season target, in points.
+GOALS = {"Maya": 100, "Jonah": 50, "Elena": 30}
+
+# Books a parent pinned an emoji to (title -> emoji).
+STICKERS = {
+    "Charlotte's Web": "🕷️",
+    "Matilda": "📚",
+    "James and the Giant Peach": "🍑",
+}
+
 
 def now_minus(days: int) -> str:
     return (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -282,10 +295,32 @@ def seed(db_path: Path, force: bool) -> None:
         )
     conn.commit()
 
+    for reader, title, days in MANUAL_READS:
+        book = by_title[title]
+        points.log_manual_read(conn, reader_ids[reader], book.id)
+        conn.execute(
+            "UPDATE attempts SET started_at = ?, submitted_at = ? "
+            "WHERE reader_id = ? AND book_id = ? AND kind = 'manual'",
+            (now_minus(days), now_minus(days), reader_ids[reader], book.id),
+        )
+        conn.execute(
+            "UPDATE points_ledger SET created_at = ? "
+            "WHERE reader_id = ? AND book_id = ?",
+            (now_minus(days), reader_ids[reader], book.id),
+        )
+
+    for name, target in GOALS.items():
+        rewards.set_goal(conn, reader_ids[name], target)
+
+    for title, emoji in STICKERS.items():
+        rewards.assign_sticker(conn, by_title[title].id, emoji, "demo pick")
+    conn.commit()
+
     print(f"Seeded {db_path}")
     print(f"  readers: {len(READERS)}")
     print(f"  quizzes: {len(quiz_ids)} approved, 1 draft")
-    print(f"  attempts: {len(ATTEMPTS)}")
+    print(f"  attempts: {len(ATTEMPTS)} quiz, {len(MANUAL_READS)} logged without a quiz")
+    print(f"  goals: {len(GOALS)}, stickers: {len(STICKERS)}")
     conn.close()
 
 

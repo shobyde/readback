@@ -21,10 +21,17 @@ content, and it never contacts Renaissance Learning services.
 
 - Stores readers, books, quizzes, attempts, and a points ledger in one SQLite file.
 - Imports a book list from CSV and enriches ISBNs through Open Library on demand.
+- Looks a title up in the Accelerated Reader catalog on request, and copies the
+  AR quiz number, ATOS level, interest level and point value onto the shelf.
 - Asks an OpenAI-compatible chat endpoint to draft quiz questions for a book.
 - Requires a parent to review, edit, and approve each quiz before readers see it.
 - Scores attempts, awards a book's points once per reader, and exports the
   reading log as CSV.
+- Rewards the loop that keeps a reader coming back: 0–3 stars per attempt,
+  per-reader point goals, derived badges, per-book stickers, and a five-week
+  report per reader.
+- Logs a finished book that has no quiz, so read-alouds and picture books still
+  count toward the log (points once per book, same ledger).
 - Serves a small server-rendered web interface with no JavaScript required.
 - Gives readers a playful shelf and parents a calmer review queue, with tap-friendly
   layouts down to phone widths.
@@ -40,14 +47,18 @@ subscribe to, for example Ollama or LM Studio on the same machine.
 
 | A reader's shelf | Taking a quiz |
 | --- | --- |
-| <img src="docs/media/reader.png" alt="Maya's shelf with her points and quiz totals, an Up next book card, and the books she has finished" width="430"> | <img src="docs/media/quiz.png" alt="The first two questions of a five-question quiz, each with four lettered choices" width="430"> |
+| <img src="docs/media/reader.png" alt="Maya's shelf with her points, a reading-goal bar, seven badges, an Up next book card, and the books she has finished" width="430"> | <img src="docs/media/quiz.png" alt="The first two questions of a five-question quiz, each with four lettered choices" width="430"> |
+
+| A reader's week | Setting the goal |
+| --- | --- |
+| <img src="docs/media/reports.png" alt="One reader's report: points by week as bars, badge progress, and the last few reading events" width="430"> | <img src="docs/media/goals.png" alt="The goals page, one card per reader with progress toward their season target" width="430"> |
 
 | Parent area | Parent review |
 | --- | --- |
 | <img src="docs/media/parent.png" alt="The parent area with a draft waiting for review, family totals, and a management card for each reader" width="430"> | <img src="docs/media/review.png" alt="Reviewing a draft: a question rail beside an editable question with four choices and a picker for the correct answer" width="430"> |
 
 <p align="center">
-  <img src="docs/media/result.png" alt="A passed result card with a 100% score ring, a points-earned sticker, and Nib the bookworm" width="860">
+  <img src="docs/media/result.png" alt="A passed result card with a 100% score ring, three stars, a points-earned sticker, and Nib the bookworm" width="860">
 </p>
 
 ## Quick start
@@ -78,7 +89,8 @@ READBACK_DB=demo.db .venv/bin/readback serve
 ```
 
 The demo creates four readers, five approved quizzes, one draft waiting for
-review, and nine attempts with points already awarded.
+review, ten reading events (one of them logged without a quiz), three reading
+goals, and three pinned stickers.
 
 ### Docker
 
@@ -189,6 +201,60 @@ it by ISBN first, then by title and author, and updates the existing row.
 The parent pages require a PIN only when `READBACK_PARENT_PIN` is set. The
 reader pages and the dashboard are always open.
 
+## Rewards and reports
+
+Rewards are motivation, not assessment. They never change whether a quiz was
+passed, and they are derived from the same points ledger everything else uses.
+
+- **Stars.** An attempt earns 0–3 stars: three at 90% or better, two at 70%,
+  one for a pass at your `READBACK_PASS_THRESHOLD`, none for a miss. The result
+  card and the finished-book list show them.
+- **Goals.** `/parent/goals` sets a points target per reader. Readers see a
+  progress bar on their shelf, a milestone nudge after each quiz, and a
+  "Goal getter" badge when they reach it. Leave the field empty to clear a goal.
+- **Badges.** First finish, Bookworm (3 books), Shelf hunter (10), Century club
+  (100 points), Week warrior, Perfect page, and Goal getter. They are computed
+  from history on every render — there is no trophy table — so correcting a
+  rule cannot leave a reader holding a badge they did not earn.
+- **Stickers.** `/parent/books` lets you pin an emoji to a book. Books without a
+  pin get a deterministic fallback, so the shelf never looks unfinished.
+- **Reports.** `/parent/reports` shows five weeks of points as bars, average
+  quiz score, badge progress, and the last few reading events for every reader.
+- **Books without a quiz.** A reader can log a finished book that has no
+  approved quiz from their shelf. It lands in the same ledger, counts as a book
+  finished, appears in the CSV export with an empty `quiz_id`, and awards its
+  points once.
+
+## AR catalog lookup (optional)
+
+`/parent/ar` (or `readback ar-search "hunger games"`) asks Accelerated Reader
+BookFind for a title and shows what a teacher would see: AR quiz number, ATOS
+book level, interest level, AR point value, and the catalog summary. Adding a
+result copies those fields onto the shelf and keys the book by quiz number, so
+adding it twice updates the same row.
+
+```bash
+readback ar-search "the hunger games"
+readback ar-add 2541        # the BookFind id from the search output
+```
+
+The client reads the public BookFind pages; there is no key and no bundled AR
+data. It never copies quiz content — Readback still generates its own questions
+from metadata and holds them for review. If the site's markup changes, the
+lookup fails loudly with a readable error instead of quietly returning nothing.
+
+Readback is not affiliated with Renaissance Learning. Accelerated Reader and AR
+are trademarks of Renaissance Learning, Inc.
+
+## Upgrading from 0.1.x
+
+Starting the app (or running `readback init-db`) migrates an existing database
+in place: it adds the AR catalog columns, the rewards tables, and rebuilds
+`attempts` so a book can be finished without a quiz. Answers and ledger rows are
+copied across; `tests/test_migration.py` proves it against a real 0.1.0 schema.
+Back up the SQLite file first if the log matters to you — that is still the
+cheapest backup there is.
+
 ## Privacy
 
 Readback has no accounts, telemetry, analytics, or cloud component. Readers,
@@ -205,8 +271,11 @@ When you press "Generate quiz", Readback sends one HTTP request to
 Readback does not send book text, reader names, attempt history, or points
 totals. There is no book text ingestion in this version at all. The request goes
 to whatever endpoint you configure: a local process keeps it on your machine,
-while a hosted endpoint receives the metadata above. Readback does not contact
-Open Library or any other service on its own.
+while a hosted endpoint receives the metadata above.
+
+Readback contacts no service on its own. Open Library is queried only when you
+ask to enrich an ISBN, and arbookfind.com only when you search the AR catalog.
+Neither request carries reader names, reading history, or point totals.
 
 ## Security warning for LAN use
 

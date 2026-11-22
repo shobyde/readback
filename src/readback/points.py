@@ -62,9 +62,9 @@ def start_attempt(conn: sqlite3.Connection, quiz_id: int, reader_id: int) -> int
     with transaction(conn):
         cursor = conn.execute(
             "INSERT INTO attempts "
-            "(quiz_id, reader_id, started_at, total_questions, correct_answers) "
-            "VALUES (?, ?, ?, ?, 0)",
-            (quiz_id, reader_id, utc_now(), int(total)),
+            "(quiz_id, book_id, reader_id, kind, started_at, total_questions, "
+            "correct_answers) VALUES (?, ?, ?, 'quiz', ?, ?, 0)",
+            (quiz_id, quiz["book_id"], reader_id, utc_now(), int(total)),
         )
     return int(cursor.lastrowid)
 
@@ -208,6 +208,71 @@ def submit_attempt(
 
 
 # --------------------------------------------------------------------------- #
+# manual reads
+# --------------------------------------------------------------------------- #
+
+
+def log_manual_read(
+    conn: sqlite3.Connection, reader_id: int, book_id: int
+) -> AttemptResult:
+    """Record a book finished without a quiz and award its points once.
+
+    Some books have no AR quiz (picture books, read-alouds, a book a parent
+    chose not to quiz).  Those still count toward the reading log, so they are
+    stored as an attempt with ``kind='manual'`` and no ``quiz_id``.  The
+    ``UNIQUE (reader_id, book_id)`` ledger guard keeps points to one award.
+    """
+    reader = conn.execute(
+        "SELECT id FROM readers WHERE id = ?", (reader_id,)
+    ).fetchone()
+    if reader is None:
+        raise ValueError(f"reader {reader_id} not found")
+    book = conn.execute(
+        "SELECT id, title, points FROM books WHERE id = ?", (book_id,)
+    ).fetchone()
+    if book is None:
+        raise ValueError(f"book {book_id} not found")
+
+    already = conn.execute(
+        "SELECT id FROM points_ledger WHERE reader_id = ? AND book_id = ?",
+        (reader_id, book_id),
+    ).fetchone()
+    if already is not None:
+        raise ValueError(
+            f"points for {book['title']} were already earned by this reader"
+        )
+
+    stamp = utc_now()
+    points = float(book["points"] or 0.0)
+    with transaction(conn):
+        cursor = conn.execute(
+            "INSERT INTO attempts "
+            "(quiz_id, book_id, reader_id, kind, started_at, submitted_at, "
+            "score, passed, total_questions, correct_answers) "
+            "VALUES (NULL, ?, ?, 'manual', ?, ?, NULL, 1, 0, 0)",
+            (book_id, reader_id, stamp, stamp),
+        )
+        attempt_id = int(cursor.lastrowid or 0)
+        conn.execute(
+            "INSERT INTO points_ledger "
+            "(reader_id, book_id, attempt_id, points, created_at) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (reader_id, book_id, attempt_id, points, stamp),
+        )
+        total = _points_total(conn, reader_id)
+
+    return AttemptResult(
+        attempt_id=attempt_id,
+        score=0.0,
+        passed=True,
+        correct=0,
+        total=0,
+        points_awarded=points,
+        points_total=total,
+    )
+
+
+# --------------------------------------------------------------------------- #
 # summaries
 # --------------------------------------------------------------------------- #
 
@@ -229,6 +294,11 @@ def reader_summary(conn: sqlite3.Connection, reader_id: int) -> ReaderSummary:
         "WHERE reader_id = ? AND submitted_at IS NOT NULL",
         (reader_id,),
     ).fetchone()["n"]
+    quiz_attempts = conn.execute(
+        "SELECT COUNT(*) AS n FROM attempts "
+        "WHERE reader_id = ? AND submitted_at IS NOT NULL AND kind = 'quiz'",
+        (reader_id,),
+    ).fetchone()["n"]
 
     return ReaderSummary(
         reader_id=reader_id,
@@ -236,6 +306,7 @@ def reader_summary(conn: sqlite3.Connection, reader_id: int) -> ReaderSummary:
         points_total=_points_total(conn, reader_id),
         books_passed=int(books_passed),
         attempts=int(attempts),
+        quiz_attempts=int(quiz_attempts),
     )
 
 
@@ -256,13 +327,14 @@ def recent_attempts(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
     """
     rows = conn.execute(
         "SELECT a.id AS attempt_id, a.reader_id, r.name AS reader_name, "
-        "a.quiz_id, q.book_id, b.title AS book_title, a.score, a.passed, "
+        "a.quiz_id, a.kind, COALESCE(q.book_id, a.book_id) AS book_id, "
+        "b.title AS book_title, a.score, a.passed, "
         "a.correct_answers, a.total_questions, a.submitted_at, "
         "COALESCE(l.points, 0.0) AS points_awarded "
         "FROM attempts a "
         "JOIN readers r ON r.id = a.reader_id "
-        "JOIN quizzes q ON q.id = a.quiz_id "
-        "JOIN books b ON b.id = q.book_id "
+        "LEFT JOIN quizzes q ON q.id = a.quiz_id "
+        "JOIN books b ON b.id = COALESCE(q.book_id, a.book_id) "
         "LEFT JOIN points_ledger l ON l.attempt_id = a.id "
         "WHERE a.submitted_at IS NOT NULL "
         "ORDER BY a.submitted_at DESC, a.id DESC LIMIT ?",
@@ -274,6 +346,7 @@ def recent_attempts(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
             "reader_id": row["reader_id"],
             "reader_name": row["reader_name"],
             "quiz_id": row["quiz_id"],
+            "kind": row["kind"],
             "book_id": row["book_id"],
             "book_title": row["book_title"],
             "score": float(row["score"] or 0.0),
@@ -289,6 +362,7 @@ def recent_attempts(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
 
 __all__ = [
     "all_summaries",
+    "log_manual_read",
     "reader_summary",
     "recent_attempts",
     "start_attempt",

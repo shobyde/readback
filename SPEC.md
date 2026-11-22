@@ -15,8 +15,16 @@ Readback generates original questions. It never copies proprietary quiz content.
 - No cloud sync, telemetry, or hosted service.
 - No book text ingestion. Quizzes are generated from metadata plus optional
   parent-written notes, then gated by human review.
-- No scraping of Accelerated Reader / AR BookFinder. ISBN metadata comes from
-  Open Library only, and only when explicitly requested.
+- No bundled Accelerated Reader catalog and no AR quiz content. The optional
+  catalog lookup reads public BookFind pages **when a parent asks**, and stores
+  only catalog metadata (quiz number, level, points); questions are still
+  generated locally and reviewed.
+
+## v0.2.0 additions
+
+- Optional AR catalog lookup (`arbookfind.py`, `/parent/ar`, `ar-search`).
+- Rewards (`rewards.py`): stars, per-reader goals, derived badges, book stickers,
+  weekly reports, and reading events that carry no quiz.
 
 ## Stack
 
@@ -41,12 +49,14 @@ Dockerfile
 src/readback/
   __init__.py          # __version__
   config.py            # Settings + load_settings
-  db.py                # connect, init_db, transaction, SCHEMA
+  db.py                # connect, init_db, migrations, SCHEMA
   models.py            # dataclasses
   cli.py               # argparse entry point
-  books.py             # CSV import, listing, ISBN enrichment
+  books.py             # CSV import, AR catalog upsert, listing, ISBN enrichment
+  arbookfind.py        # optional BookFind lookup (search + detail parsing)
+  rewards.py           # stars, goals, badges, stickers, weekly reports
   review.py            # draft queue, edits, approve/reject
-  points.py            # attempts, scoring, ledger, summaries
+  points.py            # attempts, scoring, ledger, manual reads, summaries
   export.py            # CSV reading log
   quiz/
     __init__.py
@@ -62,12 +72,17 @@ tests/
   conftest.py
   test_db.py
   test_books.py
+  test_arbookfind.py
   test_quiz_generate.py
   test_quiz_validate.py
   test_review.py
   test_points.py
+  test_rewards.py
+  test_manual.py
+  test_migration.py
   test_export.py
   test_web.py
+  test_web_rewards.py
   test_e2e.py
 examples/books.example.csv
 ```
@@ -124,12 +139,19 @@ CREATE TABLE IF NOT EXISTS books (
   points REAL NOT NULL DEFAULT 0.0 CHECK (points >= 0),
   grade_level TEXT NOT NULL DEFAULT '',
   notes TEXT NOT NULL DEFAULT '',
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  quiz_no INTEGER,
+  book_level REAL,
+  interest_level TEXT NOT NULL DEFAULT '',
+  summary TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'manual'
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_isbn
   ON books(isbn) WHERE isbn IS NOT NULL AND isbn != '';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_title_author
   ON books(lower(title), lower(author));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_books_quiz_no
+  ON books(quiz_no) WHERE quiz_no IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS quizzes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,8 +179,10 @@ CREATE TABLE IF NOT EXISTS questions (
 
 CREATE TABLE IF NOT EXISTS attempts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  quiz_id INTEGER NOT NULL REFERENCES quizzes(id) ON DELETE CASCADE,
+  quiz_id INTEGER REFERENCES quizzes(id) ON DELETE CASCADE,
+  book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
   reader_id INTEGER NOT NULL REFERENCES readers(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'quiz' CHECK (kind IN ('quiz','manual')),
   started_at TEXT NOT NULL,
   submitted_at TEXT,
   score REAL,
@@ -167,6 +191,7 @@ CREATE TABLE IF NOT EXISTS attempts (
   correct_answers INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_attempts_reader ON attempts(reader_id, submitted_at);
+CREATE INDEX IF NOT EXISTS idx_attempts_book ON attempts(book_id);
 
 CREATE TABLE IF NOT EXISTS attempt_answers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -186,6 +211,21 @@ CREATE TABLE IF NOT EXISTS points_ledger (
   created_at TEXT NOT NULL,
   UNIQUE (reader_id, book_id)
 );
+
+CREATE TABLE IF NOT EXISTS goals (
+  reader_id INTEGER PRIMARY KEY REFERENCES readers(id) ON DELETE CASCADE,
+  target REAL NOT NULL CHECK (target > 0),
+  period TEXT NOT NULL DEFAULT 'season',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS book_stickers (
+  book_id INTEGER PRIMARY KEY REFERENCES books(id) ON DELETE CASCADE,
+  emoji TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  assigned_at TEXT NOT NULL
+);
 ```
 
 Rules:
@@ -197,6 +237,11 @@ Rules:
 - `score` is `correct / total` as a float rounded to 3 decimals.
 - `passed` is `1` when `score >= pass_threshold`, else `0`.
 - Deleting a reader or book cascades to their quizzes, attempts, and ledger rows.
+- A reading event with `kind = 'manual'` has no `quiz_id`; it still writes one
+  `points_ledger` row, so points are once per reader and book on either path.
+- `goals` is at most one row per reader; clearing a goal deletes the row.
+- `book_stickers` is at most one row per book; absence means the deterministic
+  fallback emoji is used.
 
 ## Module contracts
 
@@ -224,10 +269,40 @@ ReaderSummary(reader_id, name, points_total, books_passed, attempts)
 def import_books(conn: sqlite3.Connection, csv_path: str | Path) -> ImportResult
 def list_books(conn: sqlite3.Connection, query: str | None = None) -> list[Book]
 def get_book(conn: sqlite3.Connection, book_id: int) -> Book | None
-def add_book(conn, *, title, author="", isbn=None, points=0.0, grade_level="", notes="") -> int
+def add_book(conn, *, title, author="", isbn=None, points=0.0, grade_level="",
+             notes="", quiz_no=None, book_level=None, interest_level="",
+             summary="", source="manual") -> int
+def add_ar_book(conn, entry: ArBook) -> int
+    # upsert by quiz_no when present, else title + author
 def enrich_isbn(isbn: str, *, timeout: float = 5.0) -> dict | None
     # GET https://openlibrary.org/isbn/<isbn>.json
     # returns {"title": ..., "author": ...} or None. Never raises on network error.
+
+# readback/arbookfind.py — optional, user-initiated
+class ArBookFindError(RuntimeError): ...
+ArBook(ar_id, title, author="", quiz_no=None, book_level=None,
+       interest_level="", points=None, word_count=None, summary="", detail_path="")
+def search_ar_books(query: str, *, client: httpx.Client | None = None) -> list[ArBook]
+def fetch_ar_book(ar_id: int, *, client: httpx.Client | None = None) -> ArBook
+def parse_search_page(page: str) -> list[ArBook]
+def parse_detail_page(page: str, ar_id: int) -> ArBook
+    # raises ArBookFindError on an unreadable page; blank query returns []
+
+# readback/rewards.py
+def stars(correct: int, total: int, *, pass_threshold: float = 0.8) -> int
+def set_goal(conn, reader_id: int, target: float, *, period="season") -> Goal
+def get_goal(conn, reader_id: int) -> Goal | None
+def clear_goal(conn, reader_id: int) -> None
+def milestones(goal: float | None) -> list[float]
+def goal_progress(points: float, goal: Goal | float | None) -> dict
+    # {"status","goal","points","percent","current","next","remaining"}
+def assign_sticker(conn, book_id: int, emoji: str, label: str = "") -> None
+def clear_sticker(conn, book_id: int) -> None
+def stickers_for(conn, book_ids: Iterable[int]) -> dict[int, dict]
+def badges_for(conn, reader_id: int, *, now=None) -> list[Badge]
+def reader_counters(conn, reader_id: int, *, now=None) -> dict
+def weekly_points(conn, reader_id: int, *, weeks: int = 5, now=None) -> list[dict]
+def report_stats(conn, *, weeks: int = 5, now=None) -> list[dict]
 
 # readback/quiz/generate.py
 class QuizGenerationError(RuntimeError): ...
@@ -256,6 +331,9 @@ def start_attempt(conn, quiz_id: int, reader_id: int) -> int
 def submit_attempt(conn, attempt_id: int, answers: dict[int, int],
                    *, pass_threshold: float = 0.8) -> AttemptResult
     # answers maps question_id -> choice_index; a missing answer is incorrect
+def log_manual_read(conn, reader_id: int, book_id: int) -> AttemptResult
+    # a finished book with no quiz; raises ValueError when points were
+    # already earned for that (reader, book)
 def reader_summary(conn, reader_id: int) -> ReaderSummary
 def all_summaries(conn) -> list[ReaderSummary]
 def recent_attempts(conn, limit: int = 10) -> list[dict]
@@ -305,10 +383,11 @@ Server-rendered forms only. Core flows must work with JavaScript disabled.
 
 ```
 GET  /                                  dashboard: readers, points, recent attempts
-GET  /reader/<int:reader_id>            reader home: available quizzes, passed books
+GET  /reader/<int:reader_id>            reader home: goal, badges, quizzes, finished books
+POST /reader/<int:reader_id>/manual     log a finished book with no quiz
 GET  /reader/<int:reader_id>/quiz/<int:quiz_id>    quiz form
 POST /reader/<int:reader_id>/quiz/<int:quiz_id>    submit answers
-GET  /attempt/<int:attempt_id>          result page
+GET  /attempt/<int:attempt_id>          result page (stars, goal nudge, sticker)
 GET  /parent                            review queue + counts
 POST /parent/reader                     create reader (form field: name)
 GET  /parent/quiz/<int:quiz_id>         review and edit a draft
@@ -316,9 +395,16 @@ POST /parent/quiz/<int:quiz_id>/approve
 POST /parent/quiz/<int:quiz_id>/reject
 POST /parent/question/<int:question_id>/edit
 POST /parent/question/<int:question_id>/delete
-GET  /parent/books                      book list + import form
+GET  /parent/books                      book list + import form + sticker/remove controls
 POST /parent/books/import               multipart CSV upload
 POST /parent/books/<int:book_id>/generate   generate a draft quiz
+POST /parent/books/<int:book_id>/sticker    pin or clear a book's emoji
+POST /parent/books/<int:book_id>/delete     requires form field confirm=yes
+GET  /parent/ar?q=...                   search the AR catalog
+POST /parent/ar/add                     add a catalog entry (form field: ar_id)
+GET  /parent/goals                      per-reader goals and progress
+POST /parent/goals                      set a goal (reader_id, target); blank target clears
+GET  /parent/reports                    weekly points, scores, badges, recent reading
 GET  /parent/export.csv                 reading log export
 GET  /healthz                           {"status":"ok"}
 ```
@@ -337,10 +423,13 @@ readback init-db
 readback import-books <csv>
 readback serve [--host H] [--port P]
 readback generate --book-id N [--questions 5]
+readback ar-search <query> [--limit 20]
+readback ar-add <ar_id>
 ```
 
-`init-db` creates the schema and prints the database path. `serve` calls
-`create_app()` and runs Flask. `generate` prints the draft quiz id.
+`init-db` creates the schema, upgrades an older one, and prints the database
+path. `serve` calls `create_app()` and runs Flask. `generate` prints the draft
+quiz id. `ar-search` prints BookFind ids; `ar-add` copies one onto the shelf.
 
 ## Testing requirements
 
@@ -354,7 +443,7 @@ readback generate --book-id N [--questions 5]
 ## Definition of done for the MVP
 
 1. `python -m venv .venv && .venv/bin/pip install -e '.[dev]'` succeeds.
-2. `.venv/bin/pytest -q` passes with at least 40 tests.
+2. `.venv/bin/pytest -q` passes with at least 250 tests.
 3. `readback init-db` then `readback import-books examples/books.example.csv`
    works from a clean directory.
 4. With a fake LLM endpoint (tests) the full path works: import book, generate

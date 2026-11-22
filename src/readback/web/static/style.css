@@ -18,6 +18,7 @@
   /* Every focus ring paints on parchment, so it needs its own dark ember. */
   --focus-ring: #a8430f;
   --gold: #f2a63a;
+  --star: #a5611a;
   --moss: #5e6f3a;
   --sage: #8fa76a;
   --olive: #3e4a33;
@@ -248,7 +249,7 @@ summary:focus-visible {
 .lede {
   max-width: 38rem;
   color: var(--muted);
-  font-size: 1.05rem;
+  font-size: 1.15rem;
 }
 
 .crumbs,
@@ -3396,4 +3397,478 @@ table.books-table td {
     flex: 0 0 3.4rem;
     width: 3.4rem;
   }
+}
+
+/* ------------------------- rewards: goals, badges -------------------- */
+
+.goal-card {
+  margin: 1.25rem 0 2rem;
+  padding: 1.4rem 1.6rem;
+  background: var(--card-warm);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.goal-card.complete {
+  background: var(--pass-soft);
+}
+
+.goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.goal-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.goal-state {
+  font-family: var(--font-head);
+  font-weight: 600;
+  color: var(--moss);
+}
+
+.goal-bar {
+  margin: 0.7rem 0 0.55rem;
+  height: 0.85rem;
+  background: rgba(122, 74, 40, 0.14);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.goal-bar > span {
+  display: block;
+  height: 100%;
+  min-width: 0.25rem;
+  border-radius: var(--r-pill);
+  background: var(--moss);
+  transition: width 400ms var(--ease-cozy);
+}
+
+.goal-card.complete .goal-bar > span {
+  background: var(--gold);
+}
+
+.goal-copy {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.goal-copy-empty {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+}
+
+.goal-nudge {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--moss);
+  font-weight: 600;
+}
+
+.badge-shelf {
+  /* A shelf, not a grid: every card keeps the same width and the last row
+     stays left-aligned instead of stretching three cards across four slots. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 0.75rem 0 1.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.badge-card {
+  flex: 0 1 15.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.badge-card.locked {
+  opacity: 0.62;
+  background: transparent;
+  border-style: dashed;
+}
+
+.badge-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.badge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.badge-body strong {
+  font-size: 0.95rem;
+}
+
+.badge-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.badge-count {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.badge-shelf.compact .badge-card {
+  flex: 0 1 9.5rem;
+}
+
+.badge-shelf.compact {
+  margin-bottom: 0.5rem;
+}
+
+.stars {
+  /* --gold is a surface accent; at glyph size on parchment it reads as noise.
+     --star is the darker amber that keeps 3:1 against the card. */
+  color: var(--star);
+  letter-spacing: 0.08em;
+  font-size: 1.15rem;
+}
+
+.stars-big {
+  margin: 0.15rem 0 0.4rem;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.book-sticker {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.result-sticker {
+  position: absolute;
+  right: 3.2rem;
+  top: 0.4rem;
+  font-size: 2rem;
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 3px 4px rgba(42, 34, 25, 0.25));
+}
+
+.manual-form {
+  margin-top: 0.75rem;
+}
+
+/* ------------------------------ AR catalog --------------------------- */
+
+.search-form {
+  margin-bottom: 0.35rem;
+}
+
+.callout {
+  margin: 1rem 0;
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-strong);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.callout-error {
+  border-color: rgba(138, 59, 46, 0.45);
+  background: var(--fail-soft);
+  color: var(--fail);
+}
+
+.ar-results {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0.75rem 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.ar-result {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.95rem 1.1rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.ar-result-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.ar-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.ar-author {
+  margin: 0.1rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0;
+}
+
+.ar-meta span {
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--r-pill);
+  background: var(--card-green);
+  font-size: 0.78rem;
+  color: var(--olive);
+}
+
+.ar-summary {
+  margin: 0.5rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.ar-result-action {
+  flex: 0 0 auto;
+  padding-top: 0.2rem;
+}
+
+.ar-cell span {
+  display: block;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.ar-cell .ar-quiz {
+  color: var(--olive);
+  font-weight: 600;
+}
+
+/* ------------------------------ goals page --------------------------- */
+
+.goal-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.goal-row {
+  padding: 1.1rem 1.25rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+
+.goal-row-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.goal-row-head h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.goal-row-meta {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.goal-form {
+  margin-top: 0.25rem;
+}
+
+.goal-form input[type="number"] {
+  width: 7rem;
+}
+
+/* ----------------------------- reports page -------------------------- */
+
+.report-list {
+  display: grid;
+  gap: 1.25rem;
+  margin: 1rem 0 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.report-card {
+  padding: 1.25rem 1.4rem 1.4rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.report-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.report-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.report-identity h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.report-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.report-card h3 {
+  margin: 1.15rem 0 0.5rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.week-bars {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  align-items: end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.week-bars li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.week-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 4.5rem;
+  /* The track stays transparent: a filled track turned a zero week into a
+     full-height beige bar that read as data. The baseline is the only guide. */
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.week-bar {
+  display: block;
+  width: 100%;
+  min-height: 3px;
+  background: var(--sage);
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+}
+
+.week-bar.is-zero {
+  /* A zero week is an empty column, not a 3px sliver that reads as data. */
+  min-height: 0;
+  background: transparent;
+}
+
+.week-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.week-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.report-recent {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.report-recent li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.report-recent-title {
+  font-weight: 600;
+}
+
+.report-recent-meta {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+/* ------------------------- book maintenance -------------------------- */
+
+.sticker-form {
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sticker-form select {
+  max-width: 8.5rem;
+}
+
+.danger-zone {
+  font-size: 0.85rem;
+}
+
+.danger-zone summary {
+  cursor: pointer;
+  color: var(--fail);
+}
+
+.danger-zone[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.confirm-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.button.small,
+button.small {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
 }

@@ -9,10 +9,12 @@ from pathlib import Path
 
 import httpx
 
+from .arbookfind import ArBook
 from .db import transaction
 from .models import Book, ImportResult, utc_now
 
 __all__ = [
+    "add_ar_book",
     "add_book",
     "enrich_isbn",
     "get_book",
@@ -20,7 +22,10 @@ __all__ = [
     "list_books",
 ]
 
-COLUMNS = "id, title, author, isbn, points, grade_level, notes, created_at"
+COLUMNS = (
+    "id, title, author, isbn, points, grade_level, notes, created_at, "
+    "quiz_no, book_level, interest_level, summary, source"
+)
 
 #: CSV columns the importer understands.  Header names are matched
 #: case-insensitively after stripping surrounding whitespace.
@@ -39,6 +44,11 @@ def _row_to_book(row: sqlite3.Row) -> Book:
         grade_level=row["grade_level"],
         notes=row["notes"],
         created_at=row["created_at"],
+        quiz_no=row["quiz_no"],
+        book_level=row["book_level"],
+        interest_level=row["interest_level"],
+        summary=row["summary"],
+        source=row["source"],
     )
 
 
@@ -202,6 +212,11 @@ def add_book(
     points: float = 0.0,
     grade_level: str = "",
     notes: str = "",
+    quiz_no: int | None = None,
+    book_level: float | None = None,
+    interest_level: str = "",
+    summary: str = "",
+    source: str = "manual",
 ) -> int:
     """Insert one book and return its id.  An empty title is a ``ValueError``."""
     clean_title = (title or "").strip()
@@ -210,8 +225,9 @@ def add_book(
     clean_isbn = (isbn or "").strip() or None
     with transaction(conn):
         cursor = conn.execute(
-            "INSERT INTO books (title, author, isbn, points, grade_level, notes, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO books (title, author, isbn, points, grade_level, notes, "
+            "created_at, quiz_no, book_level, interest_level, summary, source) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 clean_title,
                 (author or "").strip(),
@@ -220,10 +236,89 @@ def add_book(
                 (grade_level or "").strip(),
                 (notes or "").strip(),
                 utc_now(),
+                quiz_no,
+                book_level,
+                (interest_level or "").strip(),
+                (summary or "").strip(),
+                (source or "manual").strip() or "manual",
             ),
         )
     assert cursor.lastrowid is not None
     return int(cursor.lastrowid)
+
+
+def add_ar_book(conn: sqlite3.Connection, entry: ArBook) -> int:
+    """Upsert a BookFind catalog entry into the local shelf and return its id.
+
+    AR quiz numbers are stable, so they are the identity when present.  A book
+    already on the shelf keeps its notes and grade level; only the catalog
+    fields (title, author, points, ATOS level, interest level, summary) are
+    refreshed.  Inserting is one transaction, so a failure writes nothing.
+    """
+    title = (entry.title or "").strip()
+    if not title:
+        raise ValueError("an AR catalog entry needs a title")
+    author = (entry.author or "").strip()
+
+    existing: int | None = None
+    if entry.quiz_no is not None:
+        row = conn.execute(
+            "SELECT id FROM books WHERE quiz_no = ?", (entry.quiz_no,)
+        ).fetchone()
+        if row is not None:
+            existing = int(row["id"])
+    if existing is None:
+        row = conn.execute(
+            "SELECT id FROM books WHERE lower(title) = lower(?) "
+            "AND lower(author) = lower(?)",
+            (title, author),
+        ).fetchone()
+        if row is not None:
+            existing = int(row["id"])
+
+    points = float(entry.points or 0.0)
+    with transaction(conn):
+        if existing is None:
+            cursor = conn.execute(
+                "INSERT INTO books (title, author, points, grade_level, notes, "
+                "created_at, quiz_no, book_level, interest_level, summary, source) "
+                "VALUES (?, ?, ?, '', '', ?, ?, ?, ?, ?, 'arbookfind')",
+                (
+                    title,
+                    author,
+                    points,
+                    utc_now(),
+                    entry.quiz_no,
+                    entry.book_level,
+                    entry.interest_level,
+                    entry.summary,
+                ),
+            )
+            assert cursor.lastrowid is not None
+            return int(cursor.lastrowid)
+
+        # A hand-entered AR number is not overwritten by a blank one.
+        conn.execute(
+            "UPDATE books SET title = ?, author = ?, points = ?, "
+            "quiz_no = COALESCE(?, quiz_no), "
+            "book_level = COALESCE(?, book_level), "
+            "interest_level = CASE WHEN ? != '' THEN ? ELSE interest_level END, "
+            "summary = CASE WHEN ? != '' THEN ? ELSE summary END, "
+            "source = 'arbookfind' WHERE id = ?",
+            (
+                title,
+                author,
+                points,
+                entry.quiz_no,
+                entry.book_level,
+                entry.interest_level,
+                entry.interest_level,
+                entry.summary,
+                entry.summary,
+                existing,
+            ),
+        )
+    return existing
 
 
 def _like_pattern(query: str) -> str:
